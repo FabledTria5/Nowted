@@ -1,0 +1,22 @@
+<resources>
+    <string name="app_name">Nowted</string>
+    <string name="favorites">Favorites</string>
+    <string name="trash">Trash</string>
+    <string name="archived_notes">Archived Notes</string>
+    <string name="folder_name_placeholder">Folder name</string>
+    <string name="recents">Recents</string>
+    <string name="folders">Folders</string>
+    <string name="add_folder_icon">Icon Add Folder</string>
+    <string name="more">More</string>
+    <string name="paragraph">Paragraph</string>
+    <string name="date">Date</string>
+    <string name="choose_note_rationale">Choose a not from the list on the left to view its contents, or create a new note to add to your collection</string>
+    <string name="select_a_note_to_view">Select a note to view</string>
+    <string name="create_first_note">Create first note</string>
+    <string name="note_restore_rationale">Don\'t want to lose this note? It\'s not too late! Just click the \"Restore\" button and it will be added back to your list. It\'s that simple.</string>
+    <string name="restore">Restore</string>
+    <string name="delete">Delete</string>
+    <string name="archived">Archived</string>
+    <string name="add_to_favorites">Add to favorites</string>
+    <string name="save_note">Save Note</string>
+</resources>
