@@ -6,11 +6,17 @@ import dev.fabled.nowted.data.repository.NotesRepositoryImpl
 import dev.fabled.nowted.domain.repository.NotesRepository
 import dev.fabled.nowted.domain.use_cases.folders.CollectFolders
 import dev.fabled.nowted.domain.use_cases.folders.CreateFolder
+import dev.fabled.nowted.domain.use_cases.folders.FoldersCases
 import dev.fabled.nowted.domain.use_cases.notes.CollectNotes
 import dev.fabled.nowted.domain.use_cases.notes.DeleteNote
 import dev.fabled.nowted.domain.use_cases.notes.GetNote
+import dev.fabled.nowted.domain.use_cases.notes.NotesCases
 import dev.fabled.nowted.domain.use_cases.notes.RestoreNote
 import dev.fabled.nowted.domain.use_cases.notes.SaveNote
+import dev.fabled.nowted.domain.use_cases.notes.ChangeNoteFavoriteState
+import dev.fabled.nowted.domain.use_cases.recents.AddRecent
+import dev.fabled.nowted.domain.use_cases.recents.CollectRecents
+import dev.fabled.nowted.domain.use_cases.recents.RecentsCases
 import dev.fabled.nowted.presentation.ui.navigation.manager.NavigationManager
 import dev.fabled.nowted.presentation.ui.navigation.manager.NavigationManagerImpl
 import dev.fabled.nowted.presentation.viewmodel.MainViewModel
@@ -28,6 +34,7 @@ val databaseModule = module {
                 name = "notes_database"
             )
             .createFromAsset(databaseFilePath = "database/notes_database.db")
+            .fallbackToDestructiveMigration()
             .build()
     }
 
@@ -42,13 +49,22 @@ val repositoryModule = module {
 }
 
 val useCasesModule = module {
+    singleOf(::CollectRecents)
+    singleOf(::AddRecent)
+
     singleOf(::CreateFolder)
     singleOf(::CollectFolders)
+
     singleOf(::CollectNotes)
     singleOf(::DeleteNote)
     singleOf(::SaveNote)
     singleOf(::GetNote)
     singleOf(::RestoreNote)
+    singleOf(::ChangeNoteFavoriteState)
+
+    singleOf(::FoldersCases)
+    singleOf(::NotesCases)
+    singleOf(::RecentsCases)
 }
 
 val navigationModule = module {

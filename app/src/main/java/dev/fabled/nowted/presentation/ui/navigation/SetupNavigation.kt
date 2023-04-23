@@ -92,7 +92,7 @@ private fun ExpandedNavigation(mainViewModel: MainViewModel = koinViewModel()) {
 
 @Composable
 fun Navigator.ProcessNavigationCommand(
-    navigationManager: NavigationManager = koinInject(),
+    navigationManager: NavigationManager = koinInject()
 ) {
     LaunchedEffect(key1 = navigationManager) {
         navigationManager.navigationCommand.collectLatest { command ->

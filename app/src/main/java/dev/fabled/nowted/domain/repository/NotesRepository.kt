@@ -6,22 +6,26 @@ import kotlinx.coroutines.flow.Flow
 
 interface NotesRepository {
 
+    fun getRecents(limit: Int): Flow<List<String>>
+
+    suspend fun addRecent(noteName: String)
+
+    fun getFolders(): Flow<List<FolderModel>>
+
     suspend fun createFolder(folderName: String)
 
-    suspend fun createNote(noteModel: NoteModel)
-
-    suspend fun changeNoteFolder(noteName: String, noteFolder: String)
-
-    suspend fun deleteNote(noteName: String)
+    fun getNotesFromFolder(folderName: String): Flow<List<NoteModel>>
 
     suspend fun getNote(name: String): NoteModel
 
     suspend fun isNoteExists(name: String): Boolean
 
+    suspend fun createNote(noteModel: NoteModel)
+
+    suspend fun deleteNote(noteName: String)
+
+    suspend fun changeNoteFolder(noteName: String, noteFolder: String)
+
     suspend fun toggleFavoriteState(name: String, newState: Boolean)
-
-    fun getFoldersList(): Flow<List<FolderModel>>
-
-    fun getNotesFromFolder(folderName: String): Flow<List<NoteModel>>
 
 }

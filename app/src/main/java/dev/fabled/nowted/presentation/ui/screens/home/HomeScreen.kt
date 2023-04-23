@@ -62,6 +62,7 @@ import dev.fabled.nowted.presentation.ui.theme.Active
 import dev.fabled.nowted.presentation.ui.theme.Kaushan
 import dev.fabled.nowted.presentation.ui.theme.SourceSans
 import dev.fabled.nowted.presentation.viewmodel.MainViewModel
+import kotlinx.collections.immutable.ImmutableList
 import org.koin.androidx.compose.koinViewModel
 
 class HomeScreen : Screen {
@@ -78,11 +79,15 @@ class HomeScreen : Screen {
 
                 when (event) {
                     HomeScreenEvent.NewNote -> {
-                        mainViewModel.navigate(NavigationCommand.Navigate(NoteScreen()))
+                        NavigationCommand.Navigate(NoteScreen()).let(mainViewModel::navigate)
                     }
 
                     is HomeScreenEvent.OpenFolder -> {
-                        mainViewModel.navigate(NavigationCommand.Navigate(NotesListScreen()))
+                        NavigationCommand.Navigate(NotesListScreen()).let(mainViewModel::navigate)
+                    }
+
+                    is HomeScreenEvent.OpenRecent -> {
+                        NavigationCommand.Navigate(NoteScreen()).let(mainViewModel::navigate)
                     }
 
                     else -> Unit
@@ -111,6 +116,12 @@ fun HomeScreenContent(
         }
     }
 
+    val onRecentClick: (String) -> Unit = remember {
+        { name ->
+            onScreenEvent(HomeScreenEvent.OpenRecent(name))
+        }
+    }
+
     Column(
         modifier = modifier
             .imePadding()
@@ -127,7 +138,11 @@ fun HomeScreenContent(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(bottom = 30.dp)
         ) {
-            recents(selectedItem = 0)
+            recents(
+                recents = homeScreenState.recentNotes,
+                onRecentClick = onRecentClick,
+                selectedNoteName = homeScreenState.selectedNoteName
+            )
             folders(
                 folders = homeScreenState.primaryFolders,
                 selectedFolder = homeScreenState.selectedFolder,
@@ -135,7 +150,7 @@ fun HomeScreenContent(
                 isCreatingNewFolder = homeScreenState.isCreatingFolder,
                 onCreateNewFolderClick = { onScreenEvent(HomeScreenEvent.OnStartCreateNewFolder) },
                 onNewFolderDoneClick = { folderName ->
-                    onScreenEvent(HomeScreenEvent.OnCreateFolder(folderName = folderName))
+                    onScreenEvent(HomeScreenEvent.CreateFolder(folderName = folderName))
                 }
             )
             more(
@@ -199,7 +214,12 @@ private fun HomeScreenTopContent(
     }
 }
 
-private fun LazyListScope.recents(selectedItem: Int) {
+@OptIn(ExperimentalFoundationApi::class)
+private fun LazyListScope.recents(
+    recents: ImmutableList<String>,
+    onRecentClick: (String) -> Unit,
+    selectedNoteName: String
+) {
     item {
         Text(
             modifier = Modifier.padding(start = 20.dp, bottom = 8.dp),
@@ -210,15 +230,18 @@ private fun LazyListScope.recents(selectedItem: Int) {
             fontSize = 14.sp
         )
     }
-    items(count = 3) {
+    items(items = recents) { noteName ->
         val backgroundColor by animateColorAsState(
-            targetValue = if (it == selectedItem) Active else Color.Transparent,
+            targetValue = if (noteName == selectedNoteName) Active else Color.Transparent,
             animationSpec = tween(durationMillis = 250),
             label = "background_color_animation"
         )
 
         val contentColor by animateColorAsState(
-            targetValue = if (it == selectedItem) Color.White else Color.White.copy(alpha = .6f),
+            targetValue = if (noteName == selectedNoteName)
+                Color.White
+            else
+                Color.White.copy(alpha = .6f),
             animationSpec = tween(durationMillis = 250),
             label = "content_color_animation"
         )
@@ -227,8 +250,9 @@ private fun LazyListScope.recents(selectedItem: Int) {
             modifier = Modifier
                 .padding(bottom = 5.dp)
                 .fillMaxWidth()
+                .animateItemPlacement()
                 .background(backgroundColor)
-                .clickable { }
+                .clickable { onRecentClick(noteName) }
                 .padding(horizontal = 20.dp, vertical = 10.dp),
             horizontalArrangement = Arrangement.spacedBy(15.dp),
             verticalAlignment = Alignment.CenterVertically
@@ -240,7 +264,7 @@ private fun LazyListScope.recents(selectedItem: Int) {
                 tint = contentColor
             )
             Text(
-                text = "Reflection on the Month of June",
+                text = noteName,
                 color = contentColor,
                 fontFamily = SourceSans,
                 fontWeight = FontWeight.SemiBold,

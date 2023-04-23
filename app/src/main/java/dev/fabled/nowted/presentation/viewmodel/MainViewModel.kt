@@ -2,14 +2,11 @@ package dev.fabled.nowted.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dev.fabled.nowted.domain.model.NoteModel
 import dev.fabled.nowted.domain.model.Resource
-import dev.fabled.nowted.domain.use_cases.folders.CollectFolders
-import dev.fabled.nowted.domain.use_cases.folders.CreateFolder
-import dev.fabled.nowted.domain.use_cases.notes.CollectNotes
-import dev.fabled.nowted.domain.use_cases.notes.DeleteNote
-import dev.fabled.nowted.domain.use_cases.notes.GetNote
-import dev.fabled.nowted.domain.use_cases.notes.RestoreNote
-import dev.fabled.nowted.domain.use_cases.notes.SaveNote
+import dev.fabled.nowted.domain.use_cases.folders.FoldersCases
+import dev.fabled.nowted.domain.use_cases.notes.NotesCases
+import dev.fabled.nowted.domain.use_cases.recents.RecentsCases
 import dev.fabled.nowted.presentation.mapper.toModel
 import dev.fabled.nowted.presentation.mapper.toUiModel
 import dev.fabled.nowted.presentation.mapper.toUiNotesList
@@ -38,13 +35,9 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
 class MainViewModel(
-    private val collectFolders: CollectFolders,
-    private val collectNotes: CollectNotes,
-    private val createFolder: CreateFolder,
-    private val getNote: GetNote,
-    private val restoreNote: RestoreNote,
-    private val deleteNote: DeleteNote,
-    private val saveNote: SaveNote,
+    private val recentsCases: RecentsCases,
+    private val foldersCases: FoldersCases,
+    private val notesCases: NotesCases,
     private val navigationManager: NavigationManager
 ) : ViewModel(), NavigationManager by navigationManager {
 
@@ -65,10 +58,21 @@ class MainViewModel(
     val messagesFlow = _messagesFlow.asSharedFlow()
 
     init {
+        getRecents()
         getFolders()
     }
 
-    private fun getFolders() = collectFolders()
+    private fun getRecents() = recentsCases.collectRecents()
+        .onEach { recentsList ->
+            _homeScreenState.update { state ->
+                state.copy(recentNotes = recentsList.toImmutableList())
+            }
+        }
+        .catch { exception -> Timber.e(exception) }
+        .flowOn(Dispatchers.IO)
+        .launchIn(viewModelScope)
+
+    private fun getFolders() = foldersCases.collectFolders()
         .onEach { resultList ->
             val newPrimaryList = arrayListOf<String>()
             val newAdditionsList = arrayListOf<String>()
@@ -97,7 +101,7 @@ class MainViewModel(
         .flowOn(Dispatchers.IO)
         .launchIn(viewModelScope)
 
-    private fun openFolder(folderName: String) = collectNotes(folderName = folderName)
+    private fun openFolder(folderName: String) = notesCases.collectNotes(folderName = folderName)
         .onEach { list ->
             _notesListScreenState.update { state ->
                 state.copy(
@@ -109,6 +113,17 @@ class MainViewModel(
         .catch { exception -> Timber.e(exception) }
         .flowOn(Dispatchers.IO)
         .launchIn(viewModelScope)
+
+    private fun openNote(noteModel: NoteModel) {
+        _noteScreenState.update { state ->
+            state.copy(
+                isNoteOpened = true,
+                note = noteModel.toUiModel(),
+                deletedNoteName = "",
+                deletedNoteFolderName = ""
+            )
+        }
+    }
 
     fun onHomeScreenEvent(event: HomeScreenEvent) {
         when (event) {
@@ -133,15 +148,30 @@ class MainViewModel(
                 _homeScreenState.update { state -> state.copy(isCreatingFolder = true) }
             }
 
+            is HomeScreenEvent.OpenRecent -> {
+                viewModelScope.launch(Dispatchers.IO) {
+                    launch {
+                        _homeScreenState.update { state ->
+                            state.copy(selectedNoteName = event.name)
+                        }
+                    }
+
+                    launch { openNote(noteModel = notesCases.getNote(event.name)) }
+                }
+            }
+
             is HomeScreenEvent.OpenFolder -> {
                 _homeScreenState.update { state -> state.copy(selectedFolder = event.folderName) }
                 openFolder(event.folderName)
             }
 
-            is HomeScreenEvent.OnCreateFolder -> {
-                viewModelScope.launch(Dispatchers.IO) { createFolder(event.folderName) }
+            is HomeScreenEvent.CreateFolder -> {
+                viewModelScope.launch(Dispatchers.IO) {
+                    foldersCases.createFolder(event.folderName)
+                }
                 _homeScreenState.update { state -> state.copy(isCreatingFolder = false) }
             }
+
         }
     }
 
@@ -167,17 +197,22 @@ class MainViewModel(
 
             is NotesListScreenEvent.OnNoteClick -> {
                 viewModelScope.launch(Dispatchers.IO) {
-                    _notesListScreenState.update { state ->
-                        state.copy(selectedNoteName = event.noteName)
+                    launch {
+                        _notesListScreenState.update { state ->
+                            state.copy(selectedNoteName = event.noteName)
+                        }
                     }
 
-                    _noteScreenState.update { state ->
-                        state.copy(
-                            isNoteOpened = true,
-                            note = getNote(event.noteName).toUiModel(),
-                            deletedNoteName = "",
-                            deletedNoteFolderName = ""
-                        )
+                    launch {
+                        recentsCases.addRecent(noteName = event.noteName)
+
+                        _homeScreenState.update { state ->
+                            state.copy(selectedNoteName = event.noteName)
+                        }
+                    }
+
+                    launch {
+                        openNote(noteModel = notesCases.getNote(event.noteName))
                     }
                 }
             }
@@ -219,7 +254,10 @@ class MainViewModel(
                     val deleteNoteName = _noteScreenState.value.deletedNoteName
                     val deletedNoteFolder = _noteScreenState.value.deletedNoteFolderName
 
-                    restoreNote(noteName = deleteNoteName, noteFolder = deletedNoteFolder)
+                    notesCases.restoreNote(
+                        noteName = deleteNoteName,
+                        noteFolder = deletedNoteFolder
+                    )
 
                     _noteScreenState.update { state ->
                         state.copy(deletedNoteName = "", deletedNoteFolderName = "")
@@ -231,7 +269,7 @@ class MainViewModel(
                 viewModelScope.launch(Dispatchers.IO) {
                     val currentNote = noteScreenState.value.note
 
-                    val canBeRestored = deleteNote(
+                    val canBeRestored = notesCases.deleteNote(
                         noteName = currentNote.noteTitle,
                         noteFolder = currentNote.noteFolder
                     )
@@ -257,12 +295,20 @@ class MainViewModel(
                 viewModelScope.launch(Dispatchers.IO) {
                     val note = noteScreenState.value.note
 
-                    when (val result = saveNote(note.toModel())) {
+                    when (val result = notesCases.saveNote(note.toModel())) {
                         Resource.Completed -> {
                             launch { _messagesFlow.emit("Note has been created!") }
 
-                            _notesListScreenState.update { state ->
-                                state.copy(selectedNoteName = note.noteTitle)
+                            launch {
+                                _homeScreenState.update { state ->
+                                    state.copy(selectedNoteName = note.noteTitle)
+                                }
+                            }
+
+                            launch {
+                                _notesListScreenState.update { state ->
+                                    state.copy(selectedNoteName = note.noteTitle)
+                                }
                             }
                         }
 

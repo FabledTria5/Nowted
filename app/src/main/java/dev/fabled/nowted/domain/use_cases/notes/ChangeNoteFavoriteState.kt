@@ -3,7 +3,7 @@ package dev.fabled.nowted.domain.use_cases.notes
 import dev.fabled.nowted.domain.model.Resource
 import dev.fabled.nowted.domain.repository.NotesRepository
 
-class ToggleNoteFavoriteState(private val notesRepository: NotesRepository) {
+class ChangeNoteFavoriteState(private val notesRepository: NotesRepository) {
 
     suspend operator fun invoke(noteName: String, isFavorite: Boolean): Resource<Nothing> {
         if (!notesRepository.isNoteExists(noteName))

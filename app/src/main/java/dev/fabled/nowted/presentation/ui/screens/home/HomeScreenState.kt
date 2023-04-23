@@ -6,6 +6,7 @@ import kotlinx.collections.immutable.persistentListOf
 
 @Stable
 data class HomeScreenState(
+    val recentNotes: ImmutableList<String> = persistentListOf(),
     val primaryFolders: ImmutableList<String> = persistentListOf(),
     val additionalFolders: ImmutableList<String> = persistentListOf(),
     val selectedFolder: String = "",

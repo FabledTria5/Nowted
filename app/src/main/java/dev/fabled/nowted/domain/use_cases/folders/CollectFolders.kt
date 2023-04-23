@@ -4,6 +4,6 @@ import dev.fabled.nowted.domain.repository.NotesRepository
 
 class CollectFolders(private val notesRepository: NotesRepository) {
 
-    operator fun invoke() = notesRepository.getFoldersList()
+    operator fun invoke() = notesRepository.getFolders()
 
 }

@@ -1,20 +1,44 @@
 package dev.fabled.nowted.data.db.dao
 
 import androidx.room.Dao
+import androidx.room.Insert
 import androidx.room.Query
+import androidx.room.Transaction
 import androidx.room.Upsert
 import dev.fabled.nowted.data.db.entities.FolderEntity
 import dev.fabled.nowted.data.db.entities.NoteEntity
+import dev.fabled.nowted.data.db.entities.RecentEntity
 import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface NotesDao {
 
+    @Insert
+    suspend fun createRecent(recentEntity: RecentEntity)
+
+    @Query(value = "SELECT * FROM recent_notes")
+    fun getRecents(): Flow<List<RecentEntity>>
+
+    @Query(value = "DELETE FROM recent_notes WHERE note_name = :name")
+    suspend fun deleteRecent(name: String)
+
+    @Transaction
+    suspend fun addRecent(recentEntity: RecentEntity) {
+        deleteRecent(recentEntity.noteName)
+        createRecent(recentEntity)
+    }
+
     @Upsert
     fun addFolder(folderEntity: FolderEntity)
 
+    @Query(value = "SELECT * FROM folders_table ORDER BY id DESC")
+    fun getFolders(): Flow<List<FolderEntity>>
+
     @Upsert
-    fun addOrUpdateNote(noteEntity: NoteEntity)
+    fun addNote(noteEntity: NoteEntity)
+
+    @Query(value = "SELECT * FROM notes_table WHERE parent_folder = :folderName")
+    fun getNotesInFolder(folderName: String): Flow<List<NoteEntity>>
 
     @Query(
         value = "UPDATE notes_table " +
@@ -37,12 +61,12 @@ interface NotesDao {
     suspend fun getNoteByName(noteName: String): NoteEntity
 
     @Query(value = "DELETE FROM notes_table WHERE note_name = :noteName")
-    suspend fun deleteNote(noteName: String)
+    fun deleteNote(noteName: String)
 
-    @Query(value = "SELECT * FROM folders_table ORDER BY id DESC")
-    fun getFolders(): Flow<List<FolderEntity>>
-
-    @Query(value = "SELECT * FROM notes_table WHERE parent_folder = :folderName")
-    fun getNotesInFolder(folderName: String): Flow<List<NoteEntity>>
+    @Transaction
+    suspend fun removeNote(noteName: String) {
+        deleteNote(noteName)
+        deleteRecent(noteName)
+    }
 
 }
