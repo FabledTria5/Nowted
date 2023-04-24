@@ -53,9 +53,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cafe.adriel.voyager.core.screen.Screen
+import cafe.adriel.voyager.navigator.LocalNavigator
+import cafe.adriel.voyager.navigator.currentOrThrow
 import dev.fabled.nowted.R
 import dev.fabled.nowted.presentation.model.UiNote
-import dev.fabled.nowted.presentation.ui.navigation.NavigationCommand
 import dev.fabled.nowted.presentation.ui.screens.note.NoteScreen
 import dev.fabled.nowted.presentation.ui.theme.SourceSans
 import dev.fabled.nowted.presentation.viewmodel.MainViewModel
@@ -65,6 +66,7 @@ class NotesListScreen : Screen {
 
     @Composable
     override fun Content() {
+        val navigator = LocalNavigator.currentOrThrow
         val mainViewModel = koinViewModel<MainViewModel>()
 
         val notesListScreenState by mainViewModel.notesListScreenState.collectAsState()
@@ -74,13 +76,8 @@ class NotesListScreen : Screen {
                 mainViewModel.onNotesListScreenEvent(event)
 
                 when (event) {
-                    NotesListScreenEvent.OnCreateFirstNote -> {
-                        mainViewModel.navigate(NavigationCommand.Navigate(NoteScreen()))
-                    }
-
-                    is NotesListScreenEvent.OnNoteClick -> {
-                        mainViewModel.navigate(NavigationCommand.Navigate(NoteScreen()))
-                    }
+                    is NotesListScreenEvent.OnNoteClick, NotesListScreenEvent.OnCreateFirstNote ->
+                        navigator.push(NoteScreen())
                 }
             }
         }

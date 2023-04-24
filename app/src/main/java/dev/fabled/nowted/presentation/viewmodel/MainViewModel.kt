@@ -11,7 +11,6 @@ import dev.fabled.nowted.presentation.mapper.toModel
 import dev.fabled.nowted.presentation.mapper.toUiModel
 import dev.fabled.nowted.presentation.mapper.toUiNotesList
 import dev.fabled.nowted.presentation.model.UiNote
-import dev.fabled.nowted.presentation.ui.navigation.manager.NavigationManager
 import dev.fabled.nowted.presentation.ui.screens.home.HomeScreenEvent
 import dev.fabled.nowted.presentation.ui.screens.home.HomeScreenState
 import dev.fabled.nowted.presentation.ui.screens.note.NoteScreenEvent
@@ -20,42 +19,97 @@ import dev.fabled.nowted.presentation.ui.screens.notes_list.NotesListScreenEvent
 import dev.fabled.nowted.presentation.ui.screens.notes_list.NotesListScreenState
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import timber.log.Timber
+import kotlin.time.Duration.Companion.seconds
 
+/**
+ * MainViewModel - primary application ViewModel, that processes all logics of applications and
+ * hosts all screens states. Due to availability of all screens to be displayed at one time, this
+ * ViewModel operates with states of all screens and may change states of multiple screens at one time.
+ *
+ * To achieve
+ */
 class MainViewModel(
     private val recentsCases: RecentsCases,
     private val foldersCases: FoldersCases,
     private val notesCases: NotesCases,
-    private val navigationManager: NavigationManager
-) : ViewModel(), NavigationManager by navigationManager {
+) : ViewModel() {
 
+    /**
+     * Defines state of Home Screen. Mutable state is private and can be modified only in this
+     * ViewModel.
+     */
     private val _homeScreenState = MutableStateFlow(HomeScreenState())
     val homeScreenState = _homeScreenState.asStateFlow()
 
+    /**
+     * Defines state of Notes List Screen. Mutable state is private and can be modified only in this
+     * ViewModel.
+     */
     private val _notesListScreenState = MutableStateFlow(NotesListScreenState())
     val notesListScreenState = _notesListScreenState.asStateFlow()
 
+    /**
+     * Defines state of Note Screen. Mutable state is private and can be modified only in this
+     * ViewModel.
+     */
     private val _noteScreenState = MutableStateFlow(NoteScreenState())
     val noteScreenState = _noteScreenState.asStateFlow()
 
+    /**
+     * Flow that receives errors from different sources to be delivered to user. Replay count is 0
+     * to prevent showing the same error twice. This Flow should be used only for collecting
+     * errors, that should notify user about self's.
+     */
     private val _messagesFlow = MutableSharedFlow<String>()
     val messagesFlow = _messagesFlow.asSharedFlow()
 
+    /**
+     * Initialization of ViewModel includes collecting recent notes and folders. It also starts
+     * observing searchQuery from homeScreenState to deliver search results as fast as possible.
+     */
     init {
         getRecents()
         getFolders()
+
+        collectSearchQuery()
     }
 
+    /**
+     * Observes homeScreenState and permits search in database for each query debounced for
+     * 1 second. To prevent it from getting the same query, uses distinctUntilChanged() after
+     * mapping state to searched query.
+     */
+    @OptIn(FlowPreview::class)
+    private fun collectSearchQuery() = viewModelScope.launch(Dispatchers.IO) {
+        _homeScreenState
+            .debounce(1.seconds)
+            .map { state -> state.searchQuery }
+            .distinctUntilChanged()
+            .onEach { }
+            .catch { exception -> Timber.e(exception) }
+            .flowOn(Dispatchers.IO)
+            .collect()
+    }
+
+    /**
+     * Collects recents list at all time of viewModel lifecycle
+     */
     private fun getRecents() = recentsCases.collectRecents()
         .onEach { recentsList ->
             _homeScreenState.update { state ->
@@ -66,6 +120,14 @@ class MainViewModel(
         .flowOn(Dispatchers.IO)
         .launchIn(viewModelScope)
 
+    /**
+     * Collects folders list at all time of viewModel lifecycle. When getting folders, map it to
+     * two lists for primary folders and utility folders ("Trash", "Favorites"...). Sets two lists
+     * to homeScreenState, casted to ImmutableList.
+     *
+     * If no folder in state is selected, than selects first folder from primary lists and collecting
+     * notes from it. This works at app startup to immediately show user list of notes.
+     */
     private fun getFolders() = foldersCases.collectFolders()
         .onEach { resultList ->
             val newPrimaryList = arrayListOf<String>()
@@ -82,7 +144,7 @@ class MainViewModel(
                 state.copy(
                     primaryFolders = newPrimaryList.toImmutableList(),
                     additionalFolders = newAdditionsList.toImmutableList(),
-                    selectedFolder = state.selectedFolder.ifEmpty {
+                    selectedFolder = state.selectedFolder.ifBlank {
                         val firstFolder = newPrimaryList.first()
                         openFolder(firstFolder)
 
@@ -95,6 +157,11 @@ class MainViewModel(
         .flowOn(Dispatchers.IO)
         .launchIn(viewModelScope)
 
+    /**
+     * Collects notes from given folder name and set them to notesListState.
+     *
+     * @param folderName is using to identify target folder
+     */
     private fun openFolder(folderName: String) = notesCases.collectNotes(folderName = folderName)
         .onEach { list ->
             _notesListScreenState.update { state ->
@@ -108,12 +175,17 @@ class MainViewModel(
         .flowOn(Dispatchers.IO)
         .launchIn(viewModelScope)
 
+    /**
+     * Sets note model to note screen state if model if non null.
+     *
+     * @param noteModel sets model to noteScreenState
+     */
     private fun openNote(noteModel: NoteModel?) {
-        if (noteModel != null) {
+        noteModel?.let { model ->
             _noteScreenState.update { state ->
                 state.copy(
                     isNoteOpened = true,
-                    note = noteModel.toUiModel(),
+                    note = model.toUiModel(),
                     deletedNoteName = "",
                     deletedNoteFolderName = ""
                 )
@@ -121,6 +193,15 @@ class MainViewModel(
         }
     }
 
+    /**
+     * Receives all events from Home Screen and performs some operations with each of them.
+     *
+     * This fun does not performs any navigation. The navigation should be performed in composable
+     * function after event was sent to ViewModel. This is done to achieve different behavior for
+     * different screen sizes.
+     *
+     * @param event event to be processed
+     */
     fun onHomeScreenEvent(event: HomeScreenEvent) {
         when (event) {
             HomeScreenEvent.NewNote -> {
@@ -175,6 +256,15 @@ class MainViewModel(
         }
     }
 
+    /**
+     * Receives all events from Notes List Screen and performs some operations with each of them.
+     *
+     * This fun does not performs any navigation. The navigation should be performed in composable
+     * function after event was sent to ViewModel. This is done to achieve different behavior for
+     * different screen sizes.
+     *
+     * @param event event to be processed
+     */
     fun onNotesListScreenEvent(event: NotesListScreenEvent) {
         when (event) {
             NotesListScreenEvent.OnCreateFirstNote -> {
@@ -214,6 +304,15 @@ class MainViewModel(
         }
     }
 
+    /**
+     * Receives all events from Note Screen and performs some operations with each of them.
+     *
+     * This fun does not performs any navigation. The navigation should be performed in composable
+     * function after event was sent to ViewModel. This is done to achieve different behavior for
+     * different screen sizes.
+     *
+     * @param event event to be processed
+     */
     fun onNoteScreenEvent(event: NoteScreenEvent) {
         when (event) {
             is NoteScreenEvent.NoteParagraphChanged -> _noteScreenState.update { state ->

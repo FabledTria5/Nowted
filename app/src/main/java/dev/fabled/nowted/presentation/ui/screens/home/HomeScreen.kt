@@ -55,11 +55,12 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cafe.adriel.voyager.core.screen.Screen
+import cafe.adriel.voyager.navigator.LocalNavigator
+import cafe.adriel.voyager.navigator.currentOrThrow
 import dev.fabled.nowted.R
 import dev.fabled.nowted.presentation.model.MoreItem
 import dev.fabled.nowted.presentation.ui.components.MyOutlinedTextField
 import dev.fabled.nowted.presentation.ui.components.MyTextField
-import dev.fabled.nowted.presentation.ui.navigation.NavigationCommand
 import dev.fabled.nowted.presentation.ui.screens.note.NoteScreen
 import dev.fabled.nowted.presentation.ui.screens.notes_list.NotesListScreen
 import dev.fabled.nowted.presentation.ui.theme.Active
@@ -74,6 +75,7 @@ class HomeScreen : Screen {
 
     @Composable
     override fun Content() {
+        val navigator = LocalNavigator.currentOrThrow
         val mainViewModel = koinViewModel<MainViewModel>()
 
         val homeScreenState by mainViewModel.homeScreenState.collectAsState()
@@ -83,17 +85,10 @@ class HomeScreen : Screen {
                 mainViewModel.onHomeScreenEvent(event)
 
                 when (event) {
-                    HomeScreenEvent.NewNote -> {
-                        NavigationCommand.Navigate(NoteScreen()).let(mainViewModel::navigate)
-                    }
+                    is HomeScreenEvent.OpenFolder -> navigator.push(NotesListScreen())
 
-                    is HomeScreenEvent.OpenFolder -> {
-                        NavigationCommand.Navigate(NotesListScreen()).let(mainViewModel::navigate)
-                    }
-
-                    is HomeScreenEvent.OpenRecent -> {
-                        NavigationCommand.Navigate(NoteScreen()).let(mainViewModel::navigate)
-                    }
+                    is HomeScreenEvent.OpenRecent, HomeScreenEvent.NewNote ->
+                        navigator.push(NoteScreen())
 
                     else -> Unit
                 }

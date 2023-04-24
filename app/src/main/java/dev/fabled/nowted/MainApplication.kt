@@ -3,7 +3,6 @@ package dev.fabled.nowted
 import android.app.Application
 import dev.fabled.nowted.di.appModule
 import dev.fabled.nowted.di.databaseModule
-import dev.fabled.nowted.di.navigationModule
 import dev.fabled.nowted.di.repositoryModule
 import dev.fabled.nowted.di.useCasesModule
 import org.koin.android.ext.koin.androidContext
@@ -27,7 +26,6 @@ class MainApplication : Application() {
                 databaseModule,
                 repositoryModule,
                 useCasesModule,
-                navigationModule
             )
         }
     }

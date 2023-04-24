@@ -9,13 +9,11 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cafe.adriel.voyager.navigator.Navigator
-import dev.fabled.nowted.presentation.ui.navigation.manager.NavigationManager
 import dev.fabled.nowted.presentation.ui.navigation.transitions.SlideTransition
 import dev.fabled.nowted.presentation.ui.screens.home.HomeScreen
 import dev.fabled.nowted.presentation.ui.screens.home.HomeScreenContent
@@ -25,11 +23,8 @@ import dev.fabled.nowted.presentation.ui.screens.notes_list.NotesListScreenConte
 import dev.fabled.nowted.presentation.ui.theme.SecondaryBackground
 import dev.fabled.nowted.presentation.utils.WindowType
 import dev.fabled.nowted.presentation.utils.rememberWindowSize
-import dev.fabled.nowted.presentation.utils.replaceIf
 import dev.fabled.nowted.presentation.viewmodel.MainViewModel
-import kotlinx.coroutines.flow.collectLatest
 import org.koin.androidx.compose.koinViewModel
-import org.koin.compose.koinInject
 
 @Composable
 fun SetupNavigation() {
@@ -44,8 +39,6 @@ fun SetupNavigation() {
 @Composable
 private fun CompactNavigation() {
     Navigator(HomeScreen()) { navigator ->
-        navigator.ProcessNavigationCommand()
-
         SlideTransition(navigator = navigator, modifier = Modifier.systemBarsPadding())
     }
 }
@@ -86,24 +79,6 @@ private fun ExpandedNavigation(mainViewModel: MainViewModel = koinViewModel()) {
             )
         } else {
             EmptyNoteContent()
-        }
-    }
-}
-
-@Composable
-private fun Navigator.ProcessNavigationCommand(
-    navigationManager: NavigationManager = koinInject()
-) {
-    LaunchedEffect(key1 = navigationManager) {
-        navigationManager.navigationCommand.collectLatest { command ->
-            when (command) {
-                NavigationCommand.NavigateBack -> pop()
-                is NavigationCommand.Navigate -> push(command.screen)
-                is NavigationCommand.Replace -> replaceIf(
-                    destination = command.screen,
-                    block = { command.screen.key != lastItem.key }
-                )
-            }
         }
     }
 }
