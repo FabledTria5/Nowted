@@ -6,6 +6,8 @@ import androidx.compose.ui.unit.sp
 import dev.fabled.nowted.presentation.utils.NoteTextDecoration
 import dev.fabled.nowted.presentation.utils.NoteTextStyle
 import dev.fabled.nowted.presentation.utils.NoteTextWeight
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
 @Stable
 data class UiNote(
@@ -17,5 +19,5 @@ data class UiNote(
     val fontWeight: NoteTextWeight = NoteTextWeight.Normal,
     val textStyle: NoteTextStyle = NoteTextStyle.Normal,
     val textDecoration: NoteTextDecoration = NoteTextDecoration.None,
-    val noteDate: String = ""
+    val noteDate: String = LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
 )

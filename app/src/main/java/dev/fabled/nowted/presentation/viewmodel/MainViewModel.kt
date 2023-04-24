@@ -31,8 +31,6 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import timber.log.Timber
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
 
 class MainViewModel(
     private val recentsCases: RecentsCases,
@@ -40,10 +38,6 @@ class MainViewModel(
     private val notesCases: NotesCases,
     private val navigationManager: NavigationManager
 ) : ViewModel(), NavigationManager by navigationManager {
-
-    companion object {
-        private val noteDateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
-    }
 
     private val _homeScreenState = MutableStateFlow(HomeScreenState())
     val homeScreenState = _homeScreenState.asStateFlow()
@@ -114,14 +108,16 @@ class MainViewModel(
         .flowOn(Dispatchers.IO)
         .launchIn(viewModelScope)
 
-    private fun openNote(noteModel: NoteModel) {
-        _noteScreenState.update { state ->
-            state.copy(
-                isNoteOpened = true,
-                note = noteModel.toUiModel(),
-                deletedNoteName = "",
-                deletedNoteFolderName = ""
-            )
+    private fun openNote(noteModel: NoteModel?) {
+        if (noteModel != null) {
+            _noteScreenState.update { state ->
+                state.copy(
+                    isNoteOpened = true,
+                    note = noteModel.toUiModel(),
+                    deletedNoteName = "",
+                    deletedNoteFolderName = ""
+                )
+            }
         }
     }
 
@@ -134,10 +130,7 @@ class MainViewModel(
                 _noteScreenState.update { state ->
                     state.copy(
                         isNoteOpened = true,
-                        note = UiNote(
-                            noteFolder = homeScreenState.value.selectedFolder,
-                            noteDate = LocalDate.now().format(noteDateFormatter)
-                        ),
+                        note = UiNote(noteFolder = homeScreenState.value.selectedFolder),
                         deletedNoteName = "",
                         deletedNoteFolderName = ""
                     )
@@ -146,6 +139,10 @@ class MainViewModel(
 
             HomeScreenEvent.OnStartCreateNewFolder -> {
                 _homeScreenState.update { state -> state.copy(isCreatingFolder = true) }
+            }
+
+            HomeScreenEvent.ToggleSearch -> _homeScreenState.update { state ->
+                state.copy(isSearching = !state.isSearching)
             }
 
             is HomeScreenEvent.OpenRecent -> {
@@ -172,6 +169,9 @@ class MainViewModel(
                 _homeScreenState.update { state -> state.copy(isCreatingFolder = false) }
             }
 
+            is HomeScreenEvent.ChangeSearchQuery -> {
+
+            }
         }
     }
 
@@ -185,10 +185,7 @@ class MainViewModel(
                 _noteScreenState.update { state ->
                     state.copy(
                         isNoteOpened = true,
-                        note = UiNote(
-                            noteFolder = notesListScreenState.value.folderName,
-                            noteDate = LocalDate.now().format(noteDateFormatter)
-                        ),
+                        note = UiNote(noteFolder = notesListScreenState.value.folderName),
                         deletedNoteName = "",
                         deletedNoteFolderName = ""
                     )
@@ -197,10 +194,8 @@ class MainViewModel(
 
             is NotesListScreenEvent.OnNoteClick -> {
                 viewModelScope.launch(Dispatchers.IO) {
-                    launch {
-                        _notesListScreenState.update { state ->
-                            state.copy(selectedNoteName = event.noteName)
-                        }
+                    _notesListScreenState.update { state ->
+                        state.copy(selectedNoteName = event.noteName)
                     }
 
                     launch {
@@ -269,22 +264,27 @@ class MainViewModel(
                 viewModelScope.launch(Dispatchers.IO) {
                     val currentNote = noteScreenState.value.note
 
-                    val canBeRestored = notesCases.deleteNote(
+                    val result = notesCases.deleteNote(
                         noteName = currentNote.noteTitle,
-                        noteFolder = currentNote.noteFolder
                     )
 
-                    if (canBeRestored) {
-                        _noteScreenState.update { state ->
-                            state.copy(
-                                deletedNoteName = currentNote.noteTitle,
-                                deletedNoteFolderName = currentNote.noteFolder
-                            )
+                    when (result) {
+                        is Resource.Success -> {
+                            if (result.data) {
+                                _noteScreenState.update { state ->
+                                    state.copy(
+                                        deletedNoteName = currentNote.noteTitle,
+                                        deletedNoteFolderName = currentNote.noteFolder
+                                    )
+                                }
+                            } else {
+                                _noteScreenState.update { state ->
+                                    state.copy(isNoteOpened = false, note = UiNote())
+                                }
+                            }
                         }
-                    } else {
-                        _noteScreenState.update { state ->
-                            state.copy(isNoteOpened = false, note = UiNote())
-                        }
+
+                        else -> Unit
                     }
                 }
             }
@@ -297,7 +297,7 @@ class MainViewModel(
 
                     when (val result = notesCases.saveNote(note.toModel())) {
                         Resource.Completed -> {
-                            launch { _messagesFlow.emit("Note has been created!") }
+                            launch { _messagesFlow.emit(value = "Note has been created!") }
 
                             launch {
                                 _homeScreenState.update { state ->
@@ -319,5 +319,4 @@ class MainViewModel(
             }
         }
     }
-
 }

@@ -80,7 +80,7 @@ private fun ExpandedNavigation(mainViewModel: MainViewModel = koinViewModel()) {
         )
         if (notesScreenState.isNoteOpened) {
             NoteScreenContent(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier.padding(vertical = 50.dp),
                 screenState = notesScreenState,
                 onScreenEvent = mainViewModel::onNoteScreenEvent
             )
@@ -91,7 +91,7 @@ private fun ExpandedNavigation(mainViewModel: MainViewModel = koinViewModel()) {
 }
 
 @Composable
-fun Navigator.ProcessNavigationCommand(
+private fun Navigator.ProcessNavigationCommand(
     navigationManager: NavigationManager = koinInject()
 ) {
     LaunchedEffect(key1 = navigationManager) {

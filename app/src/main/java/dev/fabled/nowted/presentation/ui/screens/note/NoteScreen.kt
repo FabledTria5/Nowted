@@ -90,6 +90,7 @@ class NoteScreen : Screen {
             NoteScreenContent(
                 modifier = Modifier
                     .padding(padding)
+                    .padding(vertical = 20.dp)
                     .fillMaxSize(),
                 screenState = noteScreenState,
                 onScreenEvent = mainViewModel::onNoteScreenEvent
@@ -196,10 +197,11 @@ fun NoteScreenContent(
     }
 
     Column(
-        modifier = modifier
+        modifier = Modifier
+            .fillMaxSize()
             .imePadding()
             .verticalScroll(scrollState)
-            .padding(vertical = 50.dp),
+            .then(modifier),
         verticalArrangement = Arrangement.spacedBy(30.dp)
     ) {
         NoteTopBar(

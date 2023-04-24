@@ -86,7 +86,9 @@ class NotesListScreen : Screen {
         }
 
         NotesListScreenContent(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(top = 20.dp),
             screenState = notesListScreenState,
             onScreenEvent = onScreenEvent
         )
@@ -107,9 +109,7 @@ fun NotesListScreenContent(
     }
 
     Column(
-        modifier = modifier
-            .imePadding()
-            .padding(top = 30.dp),
+        modifier = modifier.imePadding(),
         verticalArrangement = Arrangement.spacedBy(15.dp)
     ) {
         AnimatedContent(

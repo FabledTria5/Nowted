@@ -58,7 +58,7 @@ interface NotesDao {
     suspend fun setFavoriteState(name: String, state: Boolean)
 
     @Query(value = "SELECT * FROM notes_table WHERE note_name = :noteName")
-    suspend fun getNoteByName(noteName: String): NoteEntity
+    suspend fun getNoteByName(noteName: String): NoteEntity?
 
     @Query(value = "DELETE FROM notes_table WHERE note_name = :noteName")
     fun deleteNote(noteName: String)

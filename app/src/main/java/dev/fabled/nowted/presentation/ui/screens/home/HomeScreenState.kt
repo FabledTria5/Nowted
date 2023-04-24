@@ -11,5 +11,7 @@ data class HomeScreenState(
     val additionalFolders: ImmutableList<String> = persistentListOf(),
     val selectedFolder: String = "",
     val selectedNoteName: String = "",
-    val isCreatingFolder: Boolean = false
+    val isCreatingFolder: Boolean = false,
+    val isSearching: Boolean = false,
+    val searchQuery: String = ""
 )

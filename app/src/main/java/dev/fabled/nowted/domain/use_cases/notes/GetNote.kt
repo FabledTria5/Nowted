@@ -5,7 +5,7 @@ import dev.fabled.nowted.domain.repository.NotesRepository
 
 class GetNote(private val notesRepository: NotesRepository) {
 
-    suspend operator fun invoke(noteName: String): NoteModel =
+    suspend operator fun invoke(noteName: String): NoteModel? =
         notesRepository.getNote(name = noteName)
 
 }

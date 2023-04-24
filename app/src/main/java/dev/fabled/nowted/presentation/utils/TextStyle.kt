@@ -1,7 +1,9 @@
 package dev.fabled.nowted.presentation.utils
 
+import androidx.compose.runtime.Stable
 import androidx.compose.ui.text.style.TextDecoration
 
+@Stable
 enum class NoteTextWeight(val weight: Int) {
     Normal(weight = 400) {
         override val next: NoteTextWeight
@@ -20,6 +22,7 @@ fun Int.getTextWeight(): NoteTextWeight = when (this) {
     else -> NoteTextWeight.Normal
 }
 
+@Stable
 enum class NoteTextStyle(val value: Int) {
     Normal(value = 0) {
         override val next: NoteTextStyle
@@ -38,6 +41,7 @@ fun Int.getTextStyle(): NoteTextStyle = when(this) {
     else -> NoteTextStyle.Normal
 }
 
+@Stable
 enum class NoteTextDecoration(val decoration: TextDecoration) {
     None(decoration = TextDecoration.None) {
         override val next: NoteTextDecoration

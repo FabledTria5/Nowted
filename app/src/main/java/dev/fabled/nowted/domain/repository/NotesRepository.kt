@@ -16,7 +16,7 @@ interface NotesRepository {
 
     fun getNotesFromFolder(folderName: String): Flow<List<NoteModel>>
 
-    suspend fun getNote(name: String): NoteModel
+    suspend fun getNote(name: String): NoteModel?
 
     suspend fun isNoteExists(name: String): Boolean
 

@@ -25,6 +25,10 @@ fun MyTextField(
     onValueChange: (String) -> Unit,
     textStyle: TextStyle = TextStyle(),
     cursorColor: Color = Active,
+    contentPaddingValues: PaddingValues = PaddingValues(0.dp),
+    leadingIcon: @Composable (() -> Unit)? = null,
+    placeHolder: @Composable (() -> Unit)? = null,
+    singleLine: Boolean = false
 ) {
     val interactionSource = remember { MutableInteractionSource() }
 
@@ -35,22 +39,21 @@ fun MyTextField(
         textStyle = textStyle,
         cursorBrush = SolidColor(cursorColor),
         interactionSource = interactionSource,
+        singleLine = singleLine,
         keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
         decorationBox = { innerTextField ->
             TextFieldDefaults.TextFieldDecorationBox(
                 value = value,
                 innerTextField = innerTextField,
                 enabled = true,
-                singleLine = false,
+                singleLine = singleLine,
+                leadingIcon = leadingIcon,
+                placeholder = placeHolder,
                 visualTransformation = VisualTransformation.None,
                 interactionSource = interactionSource,
-                contentPadding = PaddingValues(0.dp),
+                contentPadding = contentPaddingValues,
                 colors = TextFieldDefaults.textFieldColors(
-                    backgroundColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent,
-                    errorIndicatorColor = Color.Transparent,
-                    disabledIndicatorColor = Color.Transparent,
-                    focusedIndicatorColor = Color.Transparent
+                    leadingIconColor = Color.White.copy(alpha = .6f)
                 )
             )
         }

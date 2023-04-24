@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -30,6 +31,8 @@ import androidx.compose.material.Text
 import androidx.compose.material.TextFieldDefaults
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.SearchOff
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -55,11 +58,13 @@ import cafe.adriel.voyager.core.screen.Screen
 import dev.fabled.nowted.R
 import dev.fabled.nowted.presentation.model.MoreItem
 import dev.fabled.nowted.presentation.ui.components.MyOutlinedTextField
+import dev.fabled.nowted.presentation.ui.components.MyTextField
 import dev.fabled.nowted.presentation.ui.navigation.NavigationCommand
 import dev.fabled.nowted.presentation.ui.screens.note.NoteScreen
 import dev.fabled.nowted.presentation.ui.screens.notes_list.NotesListScreen
 import dev.fabled.nowted.presentation.ui.theme.Active
 import dev.fabled.nowted.presentation.ui.theme.Kaushan
+import dev.fabled.nowted.presentation.ui.theme.Primary
 import dev.fabled.nowted.presentation.ui.theme.SourceSans
 import dev.fabled.nowted.presentation.viewmodel.MainViewModel
 import kotlinx.collections.immutable.ImmutableList
@@ -96,12 +101,13 @@ class HomeScreen : Screen {
         }
 
         HomeScreenContent(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(top = 20.dp),
             homeScreenState = homeScreenState,
             onScreenEvent = onScreenEvent
         )
     }
-
 }
 
 @Composable
@@ -123,26 +129,28 @@ fun HomeScreenContent(
     }
 
     Column(
-        modifier = modifier
-            .imePadding()
-            .padding(top = 30.dp),
+        modifier = modifier.imePadding(),
         verticalArrangement = Arrangement.spacedBy(30.dp)
     ) {
         HomeScreenTopContent(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 20.dp),
+            isSearching = homeScreenState.isSearching,
+            searchQuery = homeScreenState.searchQuery,
             onScreenEvent = onScreenEvent
         )
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(bottom = 30.dp)
         ) {
-            recents(
-                recents = homeScreenState.recentNotes,
-                onRecentClick = onRecentClick,
-                selectedNoteName = homeScreenState.selectedNoteName
-            )
+            if (homeScreenState.recentNotes.isNotEmpty()) {
+                recents(
+                    recents = homeScreenState.recentNotes,
+                    onRecentClick = onRecentClick,
+                    selectedNoteName = homeScreenState.selectedNoteName
+                )
+            }
             folders(
                 folders = homeScreenState.primaryFolders,
                 selectedFolder = homeScreenState.selectedFolder,
@@ -165,8 +173,12 @@ fun HomeScreenContent(
 @Composable
 private fun HomeScreenTopContent(
     modifier: Modifier = Modifier,
+    searchQuery: String,
+    isSearching: Boolean,
     onScreenEvent: (HomeScreenEvent) -> Unit
 ) {
+    var query by remember(searchQuery) { mutableStateOf(value = "") }
+
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(30.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -188,27 +200,67 @@ private fun HomeScreenTopContent(
                     contentDescription = null
                 )
             }
-            IconButton(modifier = Modifier.size(20.dp), onClick = { }) {
+            IconButton(
+                modifier = Modifier.size(20.dp),
+                onClick = { onScreenEvent(HomeScreenEvent.ToggleSearch) }
+            ) {
                 Icon(
-                    painter = painterResource(id = R.drawable.ic_search),
-                    contentDescription = "Search Icon",
+                    imageVector = if (!isSearching)
+                        Icons.Default.Search
+                    else
+                        Icons.Default.SearchOff,
+                    contentDescription = stringResource(R.string.icon_search),
                     tint = Color.White.copy(alpha = .4f)
                 )
             }
         }
-        Button(
-            modifier = Modifier.fillMaxWidth(),
-            onClick = { onScreenEvent(HomeScreenEvent.NewNote) },
-            contentPadding = PaddingValues(vertical = 10.dp),
-            shape = RoundedCornerShape(3.dp)
-        ) {
-            Icon(imageVector = Icons.Default.Add, contentDescription = null)
-            Text(
-                modifier = Modifier.padding(start = 8.dp),
-                text = "New Note",
-                fontFamily = SourceSans,
-                fontWeight = FontWeight.SemiBold,
-                fontSize = 16.sp
+        if (!isSearching) {
+            Button(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(40.dp),
+                onClick = { onScreenEvent(HomeScreenEvent.NewNote) },
+                shape = RoundedCornerShape(3.dp)
+            ) {
+                Icon(
+                    modifier = Modifier.size(20.dp),
+                    imageVector = Icons.Default.Add,
+                    contentDescription = null
+                )
+                Text(
+                    modifier = Modifier.padding(start = 8.dp),
+                    text = stringResource(R.string.new_note),
+                    fontFamily = SourceSans,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 16.sp
+                )
+            }
+        } else {
+            MyTextField(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(40.dp)
+                    .background(Primary, shape = RoundedCornerShape(3.dp)),
+                value = query,
+                onValueChange = { newText ->
+                    query = newText
+                    onScreenEvent(HomeScreenEvent.ChangeSearchQuery(newText))
+                },
+                textStyle = TextStyle(
+                    color = Color.White,
+                    fontFamily = SourceSans,
+                    fontSize = 16.sp
+                ),
+                singleLine = true,
+                contentPaddingValues = PaddingValues(end = 15.dp),
+                leadingIcon = {
+                    Icon(
+                        modifier = Modifier.size(20.dp),
+                        painter = painterResource(id = R.drawable.ic_search),
+                        contentDescription = null
+                    )
+                },
+                placeHolder = { Text(text = stringResource(R.string.search_note)) }
             )
         }
     }

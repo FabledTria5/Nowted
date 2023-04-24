@@ -40,8 +40,8 @@ class NotesRepositoryImpl(
         .getNotesInFolder(folderName = folderName)
         .map { list -> list.toNotesModels() }
 
-    override suspend fun getNote(name: String): NoteModel =
-        notesDao.getNoteByName(noteName = name).toNoteModel()
+    override suspend fun getNote(name: String): NoteModel? =
+        notesDao.getNoteByName(noteName = name)?.toNoteModel()
 
     override suspend fun isNoteExists(name: String): Boolean = notesDao.isNoteExist(name)
 
@@ -50,7 +50,7 @@ class NotesRepositoryImpl(
     }
 
     override suspend fun deleteNote(noteName: String) {
-        notesDao.deleteNote(noteName = noteName)
+        notesDao.removeNote(noteName = noteName)
     }
 
     override suspend fun changeNoteFolder(noteName: String, noteFolder: String) {
