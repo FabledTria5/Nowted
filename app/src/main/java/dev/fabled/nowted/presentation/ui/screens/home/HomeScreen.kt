@@ -297,10 +297,10 @@ private fun LazyListScope.recents(
             modifier = Modifier
                 .padding(bottom = 5.dp)
                 .fillMaxWidth()
-                .animateItemPlacement()
                 .background(backgroundColor)
                 .clickable { onRecentClick(noteName) }
-                .padding(horizontal = 20.dp, vertical = 10.dp),
+                .padding(horizontal = 20.dp, vertical = 10.dp)
+                .animateItemPlacement(),
             horizontalArrangement = Arrangement.spacedBy(15.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {

@@ -13,6 +13,7 @@ import dev.fabled.nowted.presentation.mapper.toUiNotesList
 import dev.fabled.nowted.presentation.model.UiNote
 import dev.fabled.nowted.presentation.ui.screens.home.HomeScreenEvent
 import dev.fabled.nowted.presentation.ui.screens.home.HomeScreenState
+import dev.fabled.nowted.presentation.ui.screens.note.NoteScreenContentState
 import dev.fabled.nowted.presentation.ui.screens.note.NoteScreenEvent
 import dev.fabled.nowted.presentation.ui.screens.note.NoteScreenState
 import dev.fabled.nowted.presentation.ui.screens.notes_list.NotesListScreenEvent
@@ -184,7 +185,7 @@ class MainViewModel(
         noteModel?.let { model ->
             _noteScreenState.update { state ->
                 state.copy(
-                    isNoteOpened = true,
+                    contentState = NoteScreenContentState.NOTE_OPENED,
                     note = model.toUiModel(),
                     deletedNoteName = "",
                     deletedNoteFolderName = ""
@@ -210,7 +211,7 @@ class MainViewModel(
 
                 _noteScreenState.update { state ->
                     state.copy(
-                        isNoteOpened = true,
+                        contentState = NoteScreenContentState.NOTE_OPENED,
                         note = UiNote(noteFolder = homeScreenState.value.selectedFolder),
                         deletedNoteName = "",
                         deletedNoteFolderName = ""
@@ -274,7 +275,7 @@ class MainViewModel(
 
                 _noteScreenState.update { state ->
                     state.copy(
-                        isNoteOpened = true,
+                        contentState = NoteScreenContentState.NOTE_OPENED,
                         note = UiNote(noteFolder = notesListScreenState.value.folderName),
                         deletedNoteName = "",
                         deletedNoteFolderName = ""
@@ -354,7 +355,11 @@ class MainViewModel(
                     )
 
                     _noteScreenState.update { state ->
-                        state.copy(deletedNoteName = "", deletedNoteFolderName = "")
+                        state.copy(
+                            contentState = NoteScreenContentState.NOTE_OPENED,
+                            deletedNoteName = "",
+                            deletedNoteFolderName = ""
+                        )
                     }
                 }
             }
@@ -372,17 +377,22 @@ class MainViewModel(
                             if (result.data) {
                                 _noteScreenState.update { state ->
                                     state.copy(
+                                        contentState = NoteScreenContentState.NOTE_RESTORING,
                                         deletedNoteName = currentNote.noteTitle,
                                         deletedNoteFolderName = currentNote.noteFolder
                                     )
                                 }
                             } else {
                                 _noteScreenState.update { state ->
-                                    state.copy(isNoteOpened = false, note = UiNote())
+                                    state.copy(
+                                        contentState = NoteScreenContentState.NOTE_NOT_SELECTED,
+                                        note = UiNote()
+                                    )
                                 }
                             }
                         }
 
+                        Resource.Failure -> _messagesFlow.emit(value = "Can not delete non-existing note")
                         else -> Unit
                     }
                 }

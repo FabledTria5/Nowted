@@ -81,11 +81,11 @@ class NoteScreen : Screen {
         val noteScreenState by mainViewModel.noteScreenState.collectAsState()
         val messageFlow = mainViewModel.messagesFlow
 
-        val snackBarHostState = remember { SnackbarHostState() }
+        val snackbarHostState = remember { SnackbarHostState() }
 
         Scaffold(
             modifier = Modifier.fillMaxSize(),
-            snackbarHost = { SnackbarHost(snackBarHostState) },
+            snackbarHost = { SnackbarHost(snackbarHostState) },
         ) { padding ->
             NoteScreenContent(
                 modifier = Modifier
@@ -97,19 +97,19 @@ class NoteScreen : Screen {
             )
         }
 
-        LaunchedEffect(key1 = messageFlow) {
+        LaunchedEffect(key1 = mainViewModel) {
             messageFlow.collectLatest { message ->
                 Timber.d(message = "Received message: $message")
-                snackBarHostState.showSnackbar(message = message)
+                snackbarHostState.showSnackbar(message = message)
             }
         }
     }
 }
 
 @Composable
-fun EmptyNoteContent() {
+fun EmptyNoteContent(modifier: Modifier = Modifier) {
     Column(
-        modifier = Modifier.fillMaxSize(),
+        modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
@@ -198,7 +198,6 @@ fun NoteScreenContent(
 
     Column(
         modifier = Modifier
-            .fillMaxSize()
             .imePadding()
             .verticalScroll(scrollState)
             .then(modifier),

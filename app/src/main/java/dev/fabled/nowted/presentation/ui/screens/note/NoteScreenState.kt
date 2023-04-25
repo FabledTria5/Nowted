@@ -5,8 +5,13 @@ import dev.fabled.nowted.presentation.model.UiNote
 
 @Stable
 data class NoteScreenState(
-    val isNoteOpened: Boolean = false,
+    val contentState: NoteScreenContentState = NoteScreenContentState.NOTE_NOT_SELECTED,
     val note: UiNote = UiNote(),
     val deletedNoteName: String = "",
     val deletedNoteFolderName: String = ""
 )
+
+@Stable
+enum class NoteScreenContentState {
+    NOTE_NOT_SELECTED, NOTE_OPENED, NOTE_RESTORING
+}
