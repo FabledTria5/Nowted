@@ -8,33 +8,17 @@ import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import cafe.adriel.voyager.core.screen.Screen
-import cafe.adriel.voyager.core.stack.StackEvent
 import cafe.adriel.voyager.navigator.Navigator
 
 typealias ScreenTransitionContent = @Composable AnimatedVisibilityScope.(Screen) -> Unit
 
-@OptIn(ExperimentalAnimationApi::class)
-@Composable
-fun ScreenTransition(
-    navigator: Navigator,
-    enterTransition: AnimatedContentScope<Screen>.() -> ContentTransform,
-    exitTransition: AnimatedContentScope<Screen>.() -> ContentTransform,
-    modifier: Modifier = Modifier,
-    content: ScreenTransitionContent = { it.Content() }
-) {
-    ScreenTransition(
-        navigator = navigator,
-        modifier = modifier,
-        content = content,
-        transition = {
-            when (navigator.lastEvent) {
-                StackEvent.Pop -> exitTransition()
-                else -> enterTransition()
-            }
-        }
-    )
-}
-
+/**
+ * Defines transition for given [Screen]
+ * @param navigator voyager navigator is used to trigger animations
+ * @param transition defines screens transition. Now has only slide transition
+ * @param modifier a [Modifier] to be applied [AnimatedContent]
+ * @param content current [Screen] content
+ */
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun ScreenTransition(

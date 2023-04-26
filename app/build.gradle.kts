@@ -32,7 +32,7 @@ android {
         versionCode = 1
         versionName = "1.0"
 
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner = "dev.fabled.nowted.utils.test_runner.InstrumentationTestRunner"
         vectorDrawables {
             useSupportLibrary = true
         }
@@ -109,11 +109,15 @@ dependencies {
 
     // DI
     implementation(libs.koin.compose)
+    testImplementation(libs.koin.test)
+    androidTestImplementation(libs.koin.android.test)
 
     // Tests
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.espresso.core)
+
+    // Compose tests
     androidTestImplementation(platform(libs.compose.bom))
     androidTestImplementation(libs.ui.test.junit4)
 

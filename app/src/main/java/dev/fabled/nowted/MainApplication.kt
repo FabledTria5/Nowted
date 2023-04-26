@@ -1,10 +1,7 @@
 package dev.fabled.nowted
 
 import android.app.Application
-import dev.fabled.nowted.di.appModule
-import dev.fabled.nowted.di.databaseModule
-import dev.fabled.nowted.di.repositoryModule
-import dev.fabled.nowted.di.useCasesModule
+import dev.fabled.nowted.di.productionModules
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
 import org.koin.core.context.startKoin
@@ -21,12 +18,7 @@ class MainApplication : Application() {
         startKoin {
             androidLogger(level = Level.DEBUG)
             androidContext(this@MainApplication)
-            modules(
-                appModule,
-                databaseModule,
-                repositoryModule,
-                useCasesModule,
-            )
+            modules(productionModules)
         }
     }
 

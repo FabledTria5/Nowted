@@ -16,6 +16,15 @@ import androidx.compose.ui.unit.IntOffset
 import cafe.adriel.voyager.core.stack.StackEvent
 import cafe.adriel.voyager.navigator.Navigator
 
+/**
+ * Custom slide transition for Voyager library
+ * @param navigator [Navigator] to trigger the transition
+ * @param modifier [Modifier] to be applied [ScreenTransition]
+ * @param orientation defines [SlideOrientation] for transition
+ * @param animationSpec defines [FiniteAnimationSpec] for AnimatedContentScope inside
+ * [ScreenTransition]
+ * @param content current [ScreenTransitionContent] that provides screen content
+ */
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun SlideTransition(
@@ -53,6 +62,9 @@ fun SlideTransition(
     )
 }
 
+/**
+ * Enum class, that defines types of [SlideTransition]
+ */
 enum class SlideOrientation {
     Horizontal,
     Vertical

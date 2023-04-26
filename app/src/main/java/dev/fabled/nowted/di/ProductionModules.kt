@@ -41,6 +41,21 @@ val databaseModule = module {
     }
 }
 
+val testDatabaseModule = module {
+    single {
+        Room
+            .inMemoryDatabaseBuilder(context = get(), klass = NotesDatabase::class.java)
+            .allowMainThreadQueries()
+            .fallbackToDestructiveMigration()
+            .build()
+    }
+
+    single {
+        val database = get<NotesDatabase>()
+        database.notesDao()
+    }
+}
+
 val repositoryModule = module {
     singleOf(::NotesRepositoryImpl) { bind<NotesRepository>() }
 }
@@ -64,6 +79,14 @@ val useCasesModule = module {
     singleOf(::RecentsCases)
 }
 
-val appModule = module {
+val viewModelModule = module {
     viewModelOf(::MainViewModel)
+}
+
+val testModules = module {
+    includes(testDatabaseModule, repositoryModule, useCasesModule, viewModelModule)
+}
+
+val productionModules = module {
+    includes(databaseModule, repositoryModule, useCasesModule, viewModelModule)
 }

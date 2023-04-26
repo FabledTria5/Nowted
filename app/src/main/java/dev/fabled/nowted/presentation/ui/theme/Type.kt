@@ -6,10 +6,16 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import dev.fabled.nowted.R
 
+/**
+ * Application logo font family
+ */
 val Kaushan = FontFamily(
     Font(resId = R.font.kaushan_script)
 )
 
+/**
+ * Primary application font family
+ */
 val SourceSans = FontFamily(
     Font(resId = R.font.source_sans_pro_regular),
     Font(resId = R.font.source_sans_pro_italic, style = FontStyle.Italic),

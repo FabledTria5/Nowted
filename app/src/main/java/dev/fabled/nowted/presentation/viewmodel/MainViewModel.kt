@@ -43,7 +43,9 @@ import kotlin.time.Duration.Companion.seconds
  * hosts all screens states. Due to availability of all screens to be displayed at one time, this
  * ViewModel operates with states of all screens and may change states of multiple screens at one time.
  *
- * To achieve
+ * @param recentsCases use cases to operate with recents
+ * @param foldersCases use cases to operate with folders
+ * @param notesCases use cases to operate with notes
  */
 class MainViewModel(
     private val recentsCases: RecentsCases,

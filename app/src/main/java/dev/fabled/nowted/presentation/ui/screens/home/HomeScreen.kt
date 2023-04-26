@@ -45,6 +45,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
@@ -67,6 +68,9 @@ import dev.fabled.nowted.presentation.ui.theme.Active
 import dev.fabled.nowted.presentation.ui.theme.Kaushan
 import dev.fabled.nowted.presentation.ui.theme.Primary
 import dev.fabled.nowted.presentation.ui.theme.SourceSans
+import dev.fabled.nowted.presentation.utils.TestTags.BUTTON_NEW_NOTE
+import dev.fabled.nowted.presentation.utils.TestTags.ICONS_SEARCH
+import dev.fabled.nowted.presentation.utils.TestTags.TEXT_FIELD_SEARCH
 import dev.fabled.nowted.presentation.viewmodel.MainViewModel
 import kotlinx.collections.immutable.ImmutableList
 import org.koin.androidx.compose.koinViewModel
@@ -196,7 +200,9 @@ private fun HomeScreenTopContent(
                 )
             }
             IconButton(
-                modifier = Modifier.size(20.dp),
+                modifier = Modifier
+                    .size(20.dp)
+                    .testTag(tag = ICONS_SEARCH),
                 onClick = { onScreenEvent(HomeScreenEvent.ToggleSearch) }
             ) {
                 Icon(
@@ -213,7 +219,8 @@ private fun HomeScreenTopContent(
             Button(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(40.dp),
+                    .height(40.dp)
+                    .testTag(BUTTON_NEW_NOTE),
                 onClick = { onScreenEvent(HomeScreenEvent.NewNote) },
                 shape = RoundedCornerShape(3.dp)
             ) {
@@ -235,7 +242,8 @@ private fun HomeScreenTopContent(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(40.dp)
-                    .background(Primary, shape = RoundedCornerShape(3.dp)),
+                    .background(Primary, shape = RoundedCornerShape(3.dp))
+                    .testTag(TEXT_FIELD_SEARCH),
                 value = query,
                 onValueChange = { newText ->
                     query = newText
@@ -245,6 +253,9 @@ private fun HomeScreenTopContent(
                     color = Color.White,
                     fontFamily = SourceSans,
                     fontSize = 16.sp
+                ),
+                colors = TextFieldDefaults.textFieldColors(
+                    leadingIconColor = Color.White.copy(alpha = .6f)
                 ),
                 singleLine = true,
                 contentPaddingValues = PaddingValues(end = 15.dp),

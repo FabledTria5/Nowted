@@ -87,14 +87,24 @@ class NoteScreen : Screen {
             modifier = Modifier.fillMaxSize(),
             snackbarHost = { SnackbarHost(snackbarHostState) },
         ) { padding ->
-            NoteScreenContent(
-                modifier = Modifier
-                    .padding(padding)
-                    .padding(vertical = 20.dp)
-                    .fillMaxSize(),
-                screenState = noteScreenState,
-                onScreenEvent = mainViewModel::onNoteScreenEvent
-            )
+            when (noteScreenState.contentState) {
+                NoteScreenContentState.NOTE_NOT_SELECTED ->
+                    EmptyNoteContent(modifier = Modifier.fillMaxSize())
+
+                NoteScreenContentState.NOTE_OPENED -> NoteScreenContent(
+                    modifier = Modifier
+                        .padding(padding)
+                        .padding(vertical = 20.dp)
+                        .fillMaxSize(),
+                    screenState = noteScreenState,
+                    onScreenEvent = mainViewModel::onNoteScreenEvent
+                )
+
+                NoteScreenContentState.NOTE_RESTORING -> RestoreNoteContent(
+                    noteName = noteScreenState.deletedNoteName,
+                    onScreenEvent = mainViewModel::onNoteScreenEvent
+                )
+            }
         }
 
         LaunchedEffect(key1 = mainViewModel) {

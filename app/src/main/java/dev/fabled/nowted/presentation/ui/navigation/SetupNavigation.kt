@@ -35,6 +35,12 @@ import kotlinx.coroutines.flow.collectLatest
 import org.koin.androidx.compose.koinViewModel
 import timber.log.Timber
 
+/**
+ * Resolves navigation method depending on window size provided by [rememberWindowSize].
+ * If window size is compact launches navigation, where every screen is presented as Voyager screen
+ * class. Else launches navigation, when all app screens are presented at one time. Second approach
+ * does not use any Voyager navigation library
+ */
 @Composable
 fun SetupNavigation() {
     val windowSize = rememberWindowSize()
@@ -45,6 +51,9 @@ fun SetupNavigation() {
     }
 }
 
+/**
+ * Launches navigation for compact screens using Voyager library
+ */
 @Composable
 private fun CompactNavigation() {
     Navigator(HomeScreen()) { navigator ->
@@ -52,6 +61,10 @@ private fun CompactNavigation() {
     }
 }
 
+/**
+ * Launches navigation for expanded screens. In this case navigation is handling only by changing
+ * screens states in [MainViewModel]. Voyager library is not used in this case
+ */
 @Composable
 private fun ExpandedNavigation(mainViewModel: MainViewModel = koinViewModel()) {
     val homeScreenState by mainViewModel.homeScreenState.collectAsStateWithLifecycle()

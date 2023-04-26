@@ -1,6 +1,6 @@
 [versions]
-    com-android-application = "8.1.0-beta01"
-    material = "1.5.0-alpha02"
+    com-android-application = "8.0.0"
+    material = "1.4.2"
     org-jetbrains-kotlin-android = "1.8.20"
     core-ktx = "1.10.0"
     junit = "4.13.2"
@@ -11,7 +11,8 @@
     compose-bom = "2023.04.01"
     voyager = "1.0.0-rc04"
     koin = "3.4.4"
-    accompanist = "0.31.0-alpha"
+    koin-test = "3.4.0"
+    accompanist = "0.31.1-alpha"
     timber = "5.0.1"
     collections-immutable = "0.3.5"
     preferences = "1.0.0"
@@ -39,6 +40,8 @@
     voyager-androidx = { module = "cafe.adriel.voyager:voyager-androidx", version.ref = "voyager" }
     voyager-koin = { module = "cafe.adriel.voyager:voyager-koin", version.ref = "voyager" }
     koin-compose = { module = "io.insert-koin:koin-androidx-compose", version.ref = "koin" }
+    koin-test = { module = "io.insert-koin:koin-test", version.ref = "koin-test" }
+    koin-android-test = { module = "io.insert-koin:koin-android-test", version.ref = "koin-test" }
     accompanist-controller = { module = "com.google.accompanist:accompanist-systemuicontroller", version.ref = "accompanist" }
     accompanist-permission = { module = "com.google.accompanist:accompanist-permissions", version.ref = "accompanist" }
     timber = { module = "com.jakewharton.timber:timber", version.ref = "timber" }
