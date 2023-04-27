@@ -13,5 +13,6 @@ fun UiNote.toModel(): NoteModel = NoteModel(
     paragraph = paragraph.value,
     fontWeight = fontWeight.weight,
     fontStyle = textStyle.value,
-    isUnderline = textDecoration == NoteTextDecoration.Underline
+    isUnderline = textDecoration == NoteTextDecoration.Underline,
+    isFavorite = isFavorite
 )

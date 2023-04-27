@@ -22,4 +22,5 @@
     <string name="icon_search">Search Icon</string>
     <string name="new_note">New Note</string>
     <string name="search_note">Search note</string>
+    <string name="remove_from_favorites">Remove from favorites</string>
 </resources>

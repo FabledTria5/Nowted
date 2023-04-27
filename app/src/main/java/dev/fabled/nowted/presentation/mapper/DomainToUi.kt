@@ -21,5 +21,6 @@ fun NoteModel.toUiModel(): UiNote = UiNote(
     fontWeight = fontWeight.getTextWeight(),
     textStyle = fontStyle.getTextStyle(),
     textDecoration = isUnderline.getDecoration(),
-    noteDate = noteDate
+    noteDate = noteDate,
+    isFavorite = isFavorite
 )

@@ -21,5 +21,6 @@ fun NoteEntity.toNoteModel(): NoteModel = NoteModel(
     fontWeight = fontWeight,
     paragraph = paragraph,
     fontStyle = fontStyle,
-    isUnderline = isUnderline
+    isUnderline = isUnderline,
+    isFavorite = isFavorite
 )

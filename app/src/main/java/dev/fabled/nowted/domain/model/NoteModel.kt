@@ -9,5 +9,6 @@ data class NoteModel(
     val paragraph: Float,
     val fontWeight: Int,
     val fontStyle: Int,
-    val isUnderline: Boolean
+    val isUnderline: Boolean,
+    val isFavorite: Boolean
 )

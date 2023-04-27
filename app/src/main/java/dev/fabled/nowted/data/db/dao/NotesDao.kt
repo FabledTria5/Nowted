@@ -40,6 +40,9 @@ interface NotesDao {
     @Query(value = "SELECT * FROM notes_table WHERE parent_folder = :folderName")
     fun getNotesInFolder(folderName: String): Flow<List<NoteEntity>>
 
+    @Query(value = "SELECT * FROM notes_table WHERE is_favorite = 1")
+    fun getFavoriteNotes(): Flow<List<NoteEntity>>
+
     @Query(
         value = "UPDATE notes_table " +
                 "SET parent_folder = :newFolder " +

@@ -14,6 +14,7 @@ data class UiNote(
     val noteTitle: String = "",
     val noteText: String = "",
     val noteFolder: String = "",
+    val isFavorite: Boolean = false,
     val paragraph: TextUnit = 28.sp,
     val textSize: TextUnit = 16.sp,
     val fontWeight: NoteTextWeight = NoteTextWeight.Normal,

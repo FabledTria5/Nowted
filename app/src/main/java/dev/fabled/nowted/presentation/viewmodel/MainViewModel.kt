@@ -90,7 +90,7 @@ class MainViewModel(
         getRecents()
         getFolders()
 
-        collectSearchQuery()
+//        collectSearchQuery()
     }
 
     /**
@@ -227,6 +227,16 @@ class MainViewModel(
 
             HomeScreenEvent.ToggleSearch -> _homeScreenState.update { state ->
                 state.copy(isSearching = !state.isSearching)
+            }
+
+            is HomeScreenEvent.FavoriteNotesSelected -> {
+                viewModelScope.launch(Dispatchers.IO) {
+                    _homeScreenState.update { state ->
+                        state.copy(selectedFolder = event.folderName)
+                    }
+
+
+                }
             }
 
             is HomeScreenEvent.OpenRecent -> {
@@ -400,7 +410,24 @@ class MainViewModel(
                 }
             }
 
-            NoteScreenEvent.AddToFavorites -> {}
+            NoteScreenEvent.ToggleFavorite -> {
+                viewModelScope.launch(Dispatchers.IO) {
+                    val newState = notesCases.toggleNoteFavoriteState(
+                        noteName = _noteScreenState.value.note.noteTitle,
+                        isFavorite = _noteScreenState.value.note.isFavorite
+                    )
+
+                    when (newState) {
+                        is Resource.Success -> _noteScreenState.update { state ->
+                            state.copy(note = state.note.copy(isFavorite = newState.data))
+                        }
+
+                        is Resource.Error -> _messagesFlow.emit(newState.error)
+                        else -> Unit
+                    }
+                }
+            }
+
             NoteScreenEvent.ArchiveNote -> {}
             NoteScreenEvent.SaveNote -> {
                 viewModelScope.launch(Dispatchers.IO) {

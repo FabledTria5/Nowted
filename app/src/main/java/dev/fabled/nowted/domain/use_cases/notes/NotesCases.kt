@@ -2,6 +2,7 @@ package dev.fabled.nowted.domain.use_cases.notes
 
 data class NotesCases(
     val collectNotes: CollectNotes,
+    val getFavoriteNotes: GetFavoriteNotes,
     val saveNote: SaveNote,
     val deleteNote: DeleteNote,
     val restoreNote: RestoreNote,

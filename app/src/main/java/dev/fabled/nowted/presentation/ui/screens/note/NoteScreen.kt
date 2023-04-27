@@ -32,6 +32,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.SaveAlt
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.outlined.StarBorder
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -218,6 +220,7 @@ fun NoteScreenContent(
                 .padding(horizontal = 20.dp)
                 .fillMaxWidth(),
             noteTitle = screenState.note.noteTitle,
+            isFavorite = screenState.note.isFavorite,
             onScreenEvent = onScreenEvent
         )
         NoteDateFolder(
@@ -264,6 +267,7 @@ fun NoteScreenContent(
 private fun NoteTopBar(
     modifier: Modifier = Modifier,
     noteTitle: String,
+    isFavorite: Boolean,
     onScreenEvent: (NoteScreenEvent) -> Unit
 ) {
     val focusRequester = remember { FocusRequester() }
@@ -310,6 +314,7 @@ private fun NoteTopBar(
         if (popUpController)
             NoteOptionsPopup(
                 onDismiss = { popUpController = false },
+                isFavorite = isFavorite,
                 onScreenEvent = { event ->
                     popUpController = false
                     onScreenEvent(event)
@@ -321,6 +326,7 @@ private fun NoteTopBar(
 @Composable
 private fun NoteOptionsPopup(
     onDismiss: () -> Unit,
+    isFavorite: Boolean,
     onScreenEvent: (NoteScreenEvent) -> Unit
 ) {
     Popup(
@@ -330,7 +336,7 @@ private fun NoteOptionsPopup(
     ) {
         Column(
             modifier = Modifier
-                .width(200.dp)
+                .width(250.dp)
                 .wrapContentHeight()
                 .clip(RoundedCornerShape(6.dp))
                 .background(Color(color = 0xFF333333))
@@ -358,17 +364,20 @@ private fun NoteOptionsPopup(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { onScreenEvent(NoteScreenEvent.AddToFavorites) },
+                    .clickable { onScreenEvent(NoteScreenEvent.ToggleFavorite) },
                 horizontalArrangement = Arrangement.spacedBy(15.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
                     modifier = Modifier.size(20.dp),
-                    painter = painterResource(id = R.drawable.ic_star),
+                    imageVector = if (isFavorite) Icons.Outlined.StarBorder else Icons.Default.Star,
                     contentDescription = null
                 )
                 Text(
-                    text = stringResource(R.string.add_to_favorites),
+                    text = if (isFavorite)
+                        stringResource(R.string.remove_from_favorites)
+                    else
+                        stringResource(R.string.add_to_favorites),
                     fontFamily = SourceSans,
                     fontSize = 16.sp
                 )

@@ -22,7 +22,7 @@ sealed class NoteScreenEvent {
 
     object DeleteNote : NoteScreenEvent()
 
-    object AddToFavorites : NoteScreenEvent()
+    object ToggleFavorite : NoteScreenEvent()
 
     object SaveNote : NoteScreenEvent()
 

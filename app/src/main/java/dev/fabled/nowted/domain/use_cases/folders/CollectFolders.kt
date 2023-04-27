@@ -1,9 +1,9 @@
 package dev.fabled.nowted.domain.use_cases.folders
 
-import dev.fabled.nowted.domain.repository.NotesRepository
+import dev.fabled.nowted.domain.repository.FoldersRepository
 
-class CollectFolders(private val notesRepository: NotesRepository) {
+class CollectFolders(private val foldersRepository: FoldersRepository) {
 
-    operator fun invoke() = notesRepository.getFolders()
+    operator fun invoke() = foldersRepository.getFolders()
 
 }

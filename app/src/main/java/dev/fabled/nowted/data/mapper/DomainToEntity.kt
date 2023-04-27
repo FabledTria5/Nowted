@@ -14,5 +14,5 @@ fun NoteModel.toEntity(): NoteEntity = NoteEntity(
     isUnderline = isUnderline,
     createdAt = noteDate,
     parentFolder = noteFolder,
-    isFavorite = false
+    isFavorite = isFavorite
 )

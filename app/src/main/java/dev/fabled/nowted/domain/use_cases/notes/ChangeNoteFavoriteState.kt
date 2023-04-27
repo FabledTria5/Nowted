@@ -5,13 +5,13 @@ import dev.fabled.nowted.domain.repository.NotesRepository
 
 class ChangeNoteFavoriteState(private val notesRepository: NotesRepository) {
 
-    suspend operator fun invoke(noteName: String, isFavorite: Boolean): Resource<Nothing> {
+    suspend operator fun invoke(noteName: String, isFavorite: Boolean): Resource<Boolean> {
         if (!notesRepository.isNoteExists(noteName))
             return Resource.Error(error = "You should save note before mark it as favorite!")
 
         notesRepository.toggleFavoriteState(noteName, !isFavorite)
 
-        return Resource.Completed
+        return Resource.Success(!isFavorite)
     }
 
 }

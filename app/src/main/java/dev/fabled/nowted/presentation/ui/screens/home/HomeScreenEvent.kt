@@ -13,6 +13,8 @@ sealed class HomeScreenEvent {
 
     data class ChangeSearchQuery(val query: String) : HomeScreenEvent()
 
+    data class FavoriteNotesSelected(val folderName: String) : HomeScreenEvent()
+
     object ToggleSearch : HomeScreenEvent()
 
     object NewNote : HomeScreenEvent()

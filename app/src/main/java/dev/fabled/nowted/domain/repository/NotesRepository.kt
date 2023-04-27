@@ -1,6 +1,5 @@
 package dev.fabled.nowted.domain.repository
 
-import dev.fabled.nowted.domain.model.FolderModel
 import dev.fabled.nowted.domain.model.NoteModel
 import kotlinx.coroutines.flow.Flow
 
@@ -20,26 +19,19 @@ interface NotesRepository {
     suspend fun addRecent(noteName: String)
 
     /**
-     * Returns flow of [FolderModel]
-     *
-     * @return flow containing list of [FolderModel]
-     */
-    fun getFolders(): Flow<List<FolderModel>>
-
-    /**
-     * Creates folder with given [folderName]
-     *
-     * @param folderName name of new folder
-     */
-    suspend fun createFolder(folderName: String)
-
-    /**
      * Returns all notes from folder with given [folderName]
      *
      * @param folderName target folder name
      * @return flow of [NoteModel] from given folder
      */
     fun getNotesFromFolder(folderName: String): Flow<List<NoteModel>>
+
+    /**
+     * Returns flow, where all notes are marked as favorite
+     *
+     * @return [Flow] of [NoteModel]
+     */
+    fun getFavoriteNotes(): Flow<List<NoteModel>>
 
     /**
      * Returns single [NoteModel]

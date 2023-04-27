@@ -35,6 +35,8 @@ import androidx.compose.material.Icon
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.outlined.StarBorder
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -50,6 +52,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cafe.adriel.voyager.core.screen.Screen
@@ -58,6 +61,7 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import dev.fabled.nowted.R
 import dev.fabled.nowted.presentation.model.UiNote
 import dev.fabled.nowted.presentation.ui.screens.note.NoteScreen
+import dev.fabled.nowted.presentation.ui.theme.NowtedTheme
 import dev.fabled.nowted.presentation.ui.theme.SourceSans
 import dev.fabled.nowted.presentation.viewmodel.MainViewModel
 import org.koin.androidx.compose.koinViewModel
@@ -205,8 +209,8 @@ private fun NoteListItem(
     onNoteClick: (UiNote) -> Unit,
     selectedNoteName: String
 ) {
-    // Using concrete colors instead of manipulate White color alpha, cause card doesn't show correct
-    // colors when set them with alpha
+    // Using concrete colors instead of manipulate White color alpha, cause card doesn't show
+    // correct colors when set them with alpha
     val backgroundColor by animateColorAsState(
         targetValue = if (noteItem.noteTitle == selectedNoteName)
             Color(color = 0xFF323232)
@@ -229,14 +233,30 @@ private fun NoteListItem(
                 .padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            Text(
-                text = noteItem.noteTitle,
-                fontFamily = SourceSans,
-                fontWeight = FontWeight.SemiBold,
-                fontSize = 18.sp,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    modifier = Modifier.fillMaxWidth(fraction = .9f),
+                    text = noteItem.noteTitle,
+                    fontFamily = SourceSans,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 18.sp,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Icon(
+                    modifier = Modifier.size(20.dp),
+                    imageVector = if (!noteItem.isFavorite)
+                        Icons.Outlined.StarBorder
+                    else
+                        Icons.Default.Star,
+                    contentDescription = null,
+                    tint = Color.White
+                )
+            }
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -257,6 +277,33 @@ private fun NoteListItem(
                     overflow = TextOverflow.Ellipsis
                 )
             }
+        }
+    }
+}
+
+@Preview
+@Composable
+fun NewNoteItems() {
+    NowtedTheme {
+        Box(
+            modifier = Modifier
+                .padding(20.dp)
+                .fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            NoteListItem(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(100.dp),
+                noteItem = UiNote(
+                    noteTitle = "Some fancy title",
+                    noteText = "Some fancy text",
+                    noteDate = "26/04/2023",
+                    isFavorite = true
+                ),
+                onNoteClick = {},
+                selectedNoteName = ""
+            )
         }
     }
 }

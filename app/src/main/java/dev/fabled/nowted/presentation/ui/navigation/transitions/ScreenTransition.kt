@@ -18,6 +18,7 @@ typealias ScreenTransitionContent = @Composable AnimatedVisibilityScope.(Screen)
  * @param transition defines screens transition. Now has only slide transition
  * @param modifier a [Modifier] to be applied [AnimatedContent]
  * @param content current [Screen] content
+ *
  */
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
