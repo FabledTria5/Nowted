@@ -1,5 +1,6 @@
 package dev.fabled.nowted.presentation.ui.screens.home
 
+import android.widget.Toast
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -35,7 +36,6 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SearchOff
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -45,6 +45,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -59,6 +60,11 @@ import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import dev.fabled.nowted.R
+import dev.fabled.nowted.presentation.core.TestTags.BUTTON_NEW_NOTE
+import dev.fabled.nowted.presentation.core.TestTags.ICONS_SEARCH
+import dev.fabled.nowted.presentation.core.TestTags.TEXT_FIELD_SEARCH
+import dev.fabled.nowted.presentation.core.collectInLaunchedEffect
+import dev.fabled.nowted.presentation.core.use
 import dev.fabled.nowted.presentation.model.MoreItem
 import dev.fabled.nowted.presentation.ui.components.MyOutlinedTextField
 import dev.fabled.nowted.presentation.ui.components.MyTextField
@@ -68,10 +74,6 @@ import dev.fabled.nowted.presentation.ui.theme.Active
 import dev.fabled.nowted.presentation.ui.theme.Kaushan
 import dev.fabled.nowted.presentation.ui.theme.Primary
 import dev.fabled.nowted.presentation.ui.theme.SourceSans
-import dev.fabled.nowted.presentation.utils.TestTags.BUTTON_NEW_NOTE
-import dev.fabled.nowted.presentation.utils.TestTags.ICONS_SEARCH
-import dev.fabled.nowted.presentation.utils.TestTags.TEXT_FIELD_SEARCH
-import dev.fabled.nowted.presentation.viewmodel.MainViewModel
 import kotlinx.collections.immutable.ImmutableList
 import org.koin.androidx.compose.koinViewModel
 
@@ -80,31 +82,54 @@ class HomeScreen : Screen {
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
-        val mainViewModel = koinViewModel<MainViewModel>()
+        val mainViewModel = koinViewModel<HomeViewModel>()
+        val context = LocalContext.current
 
-        val homeScreenState by mainViewModel.homeScreenState.collectAsState()
+        val (state, event, effect) = use(viewModel = mainViewModel)
 
-        val onScreenEvent: (HomeScreenEvent) -> Unit = remember {
-            { event ->
-                mainViewModel.onHomeScreenEvent(event)
+        LaunchedEffect(key1 = Unit) {
+            event.invoke(HomeScreenContract.Event.GetFolders)
+            event.invoke(HomeScreenContract.Event.GetSelections)
+            event.invoke(HomeScreenContract.Event.GetSelections)
+        }
 
-                when (event) {
-                    is HomeScreenEvent.OpenFolder -> navigator.push(NotesListScreen())
-
-                    is HomeScreenEvent.OpenRecent, HomeScreenEvent.NewNote ->
-                        navigator.push(NoteScreen())
-
-                    else -> Unit
-                }
+        effect.collectInLaunchedEffect {
+            when (it) {
+                HomeScreenContract.Effect.FolderCreated ->
+                    Toast.makeText(context, "Folder created", Toast.LENGTH_SHORT).show()
             }
         }
 
         HomeScreenContent(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(top = 20.dp),
-            homeScreenState = homeScreenState,
-            onScreenEvent = onScreenEvent
+            modifier = Modifier.fillMaxSize(),
+            state = state,
+            onFolderClick = { folderName ->
+                event.invoke(HomeScreenContract.Event.SelectFolder(folderName))
+                navigator.push(NotesListScreen())
+            },
+            onRecentClick = { recentName ->
+                event.invoke(HomeScreenContract.Event.OpenNote(recentName))
+                navigator.push(NoteScreen())
+            },
+            onToggleSearch = {
+                event.invoke(HomeScreenContract.Event.ToggleSearch)
+            },
+            onNewNoteClick = {
+                event.invoke(HomeScreenContract.Event.OpenNote())
+                navigator.push(NoteScreen())
+            },
+            onSearchClick = {
+
+            },
+            onSearchQueryChange = { query ->
+                event.invoke(HomeScreenContract.Event.UpdateSearchQuery(query))
+            },
+            onStartCreateNewFolderClick = {
+                event.invoke(HomeScreenContract.Event.OnStartCreateNewFolder)
+            },
+            onCreateNewFolderClick = { folderName ->
+                event.invoke(HomeScreenContract.Event.CreateFolder(folderName))
+            }
         )
     }
 }
@@ -112,21 +137,16 @@ class HomeScreen : Screen {
 @Composable
 fun HomeScreenContent(
     modifier: Modifier = Modifier,
-    homeScreenState: HomeScreenState,
-    onScreenEvent: (HomeScreenEvent) -> Unit
+    state: HomeScreenContract.State,
+    onFolderClick: (String) -> Unit,
+    onRecentClick: (String) -> Unit,
+    onToggleSearch: () -> Unit,
+    onNewNoteClick: () -> Unit,
+    onSearchClick: () -> Unit,
+    onSearchQueryChange: (String) -> Unit,
+    onStartCreateNewFolderClick: () -> Unit,
+    onCreateNewFolderClick: (String) -> Unit
 ) {
-    val onFolderClick: (String) -> Unit = remember {
-        { folder ->
-            onScreenEvent(HomeScreenEvent.OpenFolder(folderName = folder))
-        }
-    }
-
-    val onRecentClick: (String) -> Unit = remember {
-        { name ->
-            onScreenEvent(HomeScreenEvent.OpenRecent(name))
-        }
-    }
-
     Column(
         modifier = modifier.imePadding(),
         verticalArrangement = Arrangement.spacedBy(30.dp)
@@ -135,34 +155,35 @@ fun HomeScreenContent(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 20.dp),
-            isSearching = homeScreenState.isSearching,
-            searchQuery = homeScreenState.searchQuery,
-            onScreenEvent = onScreenEvent
+            isSearching = state.isSearching,
+            searchQuery = state.searchQuery,
+            onToggleSearch = onToggleSearch,
+            onNewNoteClick = onNewNoteClick,
+            onSearchClick = onSearchClick,
+            onSearchQueryChange = onSearchQueryChange
         )
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(bottom = 30.dp)
         ) {
-            if (homeScreenState.recentNotes.isNotEmpty()) {
+            if (state.recentNotes.isNotEmpty()) {
                 recents(
-                    recents = homeScreenState.recentNotes,
+                    recents = state.recentNotes,
                     onRecentClick = onRecentClick,
-                    selectedNoteName = homeScreenState.selectedNoteName
+                    selectedNoteName = state.selectedNoteName
                 )
             }
             folders(
-                folders = homeScreenState.primaryFolders,
-                selectedFolder = homeScreenState.selectedFolder,
+                folders = state.primaryFolders,
+                selectedFolder = state.selectedFolderName,
                 onFolderClick = onFolderClick,
-                isCreatingNewFolder = homeScreenState.isCreatingFolder,
-                onCreateNewFolderClick = { onScreenEvent(HomeScreenEvent.OnStartCreateNewFolder) },
-                onNewFolderDoneClick = { folderName ->
-                    onScreenEvent(HomeScreenEvent.CreateFolder(folderName = folderName))
-                }
+                isCreatingNewFolder = state.isCreatingFolder,
+                onCreateNewFolderClick = onStartCreateNewFolderClick,
+                onNewFolderDoneClick = onCreateNewFolderClick
             )
             more(
-                folders = homeScreenState.additionalFolders,
-                selectedFolder = homeScreenState.selectedFolder,
+                folders = state.additionalFolders,
+                selectedFolder = state.selectedFolderName,
                 onFolderClick = onFolderClick
             )
         }
@@ -174,7 +195,10 @@ private fun HomeScreenTopContent(
     modifier: Modifier = Modifier,
     searchQuery: String,
     isSearching: Boolean,
-    onScreenEvent: (HomeScreenEvent) -> Unit
+    onToggleSearch: () -> Unit,
+    onNewNoteClick: () -> Unit,
+    onSearchQueryChange: (String) -> Unit,
+    onSearchClick: () -> Unit
 ) {
     var query by remember(searchQuery) { mutableStateOf(value = "") }
 
@@ -203,7 +227,7 @@ private fun HomeScreenTopContent(
                 modifier = Modifier
                     .size(20.dp)
                     .testTag(tag = ICONS_SEARCH),
-                onClick = { onScreenEvent(HomeScreenEvent.ToggleSearch) }
+                onClick = onToggleSearch
             ) {
                 Icon(
                     imageVector = if (!isSearching)
@@ -221,7 +245,7 @@ private fun HomeScreenTopContent(
                     .fillMaxWidth()
                     .height(40.dp)
                     .testTag(BUTTON_NEW_NOTE),
-                onClick = { onScreenEvent(HomeScreenEvent.NewNote) },
+                onClick = onNewNoteClick,
                 shape = RoundedCornerShape(3.dp)
             ) {
                 Icon(
@@ -247,7 +271,7 @@ private fun HomeScreenTopContent(
                 value = query,
                 onValueChange = { newText ->
                     query = newText
-                    onScreenEvent(HomeScreenEvent.ChangeSearchQuery(newText))
+                    onSearchQueryChange(newText)
                 },
                 textStyle = TextStyle(
                     color = Color.White,
@@ -261,7 +285,9 @@ private fun HomeScreenTopContent(
                 contentPaddingValues = PaddingValues(end = 15.dp),
                 leadingIcon = {
                     Icon(
-                        modifier = Modifier.size(20.dp),
+                        modifier = Modifier
+                            .size(20.dp)
+                            .clickable { onSearchClick() },
                         painter = painterResource(id = R.drawable.ic_search),
                         contentDescription = null
                     )

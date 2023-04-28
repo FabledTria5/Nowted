@@ -36,7 +36,6 @@ import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.StarBorder
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -63,33 +62,81 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
 import cafe.adriel.voyager.core.screen.Screen
 import dev.fabled.nowted.R
+import dev.fabled.nowted.presentation.core.collectInLaunchedEffect
+import dev.fabled.nowted.presentation.core.showSnackBar
+import dev.fabled.nowted.presentation.core.use
 import dev.fabled.nowted.presentation.ui.components.MyTextField
 import dev.fabled.nowted.presentation.ui.components.OptionsButton
+import dev.fabled.nowted.presentation.ui.screens.note.NoteScreenContract.State.NoteScreenContentState
 import dev.fabled.nowted.presentation.ui.theme.Active
 import dev.fabled.nowted.presentation.ui.theme.SourceSans
-import dev.fabled.nowted.presentation.viewmodel.MainViewModel
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.collectLatest
 import org.koin.androidx.compose.koinViewModel
-import timber.log.Timber
 import kotlin.time.Duration.Companion.milliseconds
 
 class NoteScreen : Screen {
 
     @Composable
     override fun Content() {
-        val mainViewModel: MainViewModel = koinViewModel()
+        val viewModel = koinViewModel<NoteViewModel>()
 
-        val noteScreenState by mainViewModel.noteScreenState.collectAsState()
-        val messageFlow = mainViewModel.messagesFlow
+        val (state, event, effect) = use(viewModel = viewModel)
 
         val snackbarHostState = remember { SnackbarHostState() }
+
+        LaunchedEffect(key1 = Unit) {
+            event.invoke(NoteScreenContract.Event.CollectCurrentNote)
+        }
+
+        effect.collectInLaunchedEffect {
+            when (it) {
+                NoteScreenContract.Effect.AddedToFavorite -> showSnackBar(
+                    snackbarHostState = snackbarHostState,
+                    message = "Added to favorites!"
+                )
+
+                NoteScreenContract.Effect.FavoriteFailure -> showSnackBar(
+                    snackbarHostState = snackbarHostState,
+                    message = "Note does not exist!"
+                )
+
+                NoteScreenContract.Effect.NoteDeleteError -> showSnackBar(
+                    snackbarHostState = snackbarHostState,
+                    message = "Can not delete non existing note!"
+                )
+
+                NoteScreenContract.Effect.NoteDeleted -> showSnackBar(
+                    snackbarHostState = snackbarHostState,
+                    message = "Note has been deleted!"
+                )
+
+                NoteScreenContract.Effect.NoteRemoved -> showSnackBar(
+                    snackbarHostState = snackbarHostState,
+                    message = "Note has been saved!"
+                )
+
+                NoteScreenContract.Effect.NoteRestored -> showSnackBar(
+                    snackbarHostState = snackbarHostState,
+                    message = "Note has been restored!"
+                )
+
+                NoteScreenContract.Effect.NoteSaveError -> showSnackBar(
+                    snackbarHostState = snackbarHostState,
+                    message = "Error while saving note"
+                )
+
+                NoteScreenContract.Effect.NoteSaved -> showSnackBar(
+                    snackbarHostState = snackbarHostState,
+                    message = "Note has been saved!"
+                )
+            }
+        }
 
         Scaffold(
             modifier = Modifier.fillMaxSize(),
             snackbarHost = { SnackbarHost(snackbarHostState) },
         ) { padding ->
-            when (noteScreenState.contentState) {
+            when (state.contentState) {
                 NoteScreenContentState.NOTE_NOT_SELECTED ->
                     EmptyNoteContent(modifier = Modifier.fillMaxSize())
 
@@ -98,21 +145,16 @@ class NoteScreen : Screen {
                         .padding(padding)
                         .padding(vertical = 20.dp)
                         .fillMaxSize(),
-                    screenState = noteScreenState,
-                    onScreenEvent = mainViewModel::onNoteScreenEvent
+                    state = state,
+                    onEvent = { event.invoke(it) }
                 )
 
                 NoteScreenContentState.NOTE_RESTORING -> RestoreNoteContent(
-                    noteName = noteScreenState.deletedNoteName,
-                    onScreenEvent = mainViewModel::onNoteScreenEvent
+                    noteName = state.deletedNoteName,
+                    onRestoreNote = {
+                        event.invoke(NoteScreenContract.Event.RestoreNote)
+                    }
                 )
-            }
-        }
-
-        LaunchedEffect(key1 = mainViewModel) {
-            messageFlow.collectLatest { message ->
-                Timber.d(message = "Received message: $message")
-                snackbarHostState.showSnackbar(message = message)
             }
         }
     }
@@ -149,9 +191,9 @@ fun EmptyNoteContent(modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun RestoreNoteContent(noteName: String, onScreenEvent: (NoteScreenEvent) -> Unit) {
+fun RestoreNoteContent(modifier: Modifier = Modifier, noteName: String, onRestoreNote: () -> Unit) {
     Column(
-        modifier = Modifier
+        modifier = modifier
             .padding(horizontal = 20.dp)
             .fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -183,7 +225,7 @@ fun RestoreNoteContent(noteName: String, onScreenEvent: (NoteScreenEvent) -> Uni
         )
         Button(
             modifier = Modifier.padding(top = 10.dp),
-            onClick = { onScreenEvent(NoteScreenEvent.RestoreNote) },
+            onClick = onRestoreNote,
             shape = RoundedCornerShape(6.dp),
             colors = ButtonDefaults.buttonColors(
                 backgroundColor = Active,
@@ -199,13 +241,13 @@ fun RestoreNoteContent(noteName: String, onScreenEvent: (NoteScreenEvent) -> Uni
 @Composable
 fun NoteScreenContent(
     modifier: Modifier = Modifier,
-    screenState: NoteScreenState,
-    onScreenEvent: (NoteScreenEvent) -> Unit
+    state: NoteScreenContract.State,
+    onEvent: (NoteScreenContract.Event) -> Unit
 ) {
     val scrollState = rememberScrollState()
 
-    var noteText by remember(screenState.note.noteText) {
-        mutableStateOf(screenState.note.noteText)
+    var noteText by remember(state.note.noteText) {
+        mutableStateOf(state.note.noteText)
     }
 
     Column(
@@ -219,27 +261,22 @@ fun NoteScreenContent(
             modifier = Modifier
                 .padding(horizontal = 20.dp)
                 .fillMaxWidth(),
-            noteTitle = screenState.note.noteTitle,
-            isFavorite = screenState.note.isFavorite,
-            onScreenEvent = onScreenEvent
+            noteTitle = state.note.noteTitle,
+            isFavorite = state.note.isFavorite,
+            onEvent = onEvent
         )
         NoteDateFolder(
             modifier = Modifier
                 .padding(horizontal = 20.dp)
                 .fillMaxWidth(),
-            noteDate = screenState.note.noteDate,
-            noteFolder = screenState.note.noteFolder
+            noteDate = state.note.noteDate,
+            noteFolder = state.note.noteFolder
         )
         NoteSettings(
             modifier = Modifier.fillMaxWidth(),
             contentPadding = 20.dp,
-            textSize = screenState
-                .note
-                .textSize
-                .value
-                .toInt()
-                .toString(),
-            onScreenEvent = onScreenEvent
+            textSize = state.note.textSize,
+            onEvent = onEvent
         )
         MyTextField(
             modifier = Modifier
@@ -248,16 +285,16 @@ fun NoteScreenContent(
             value = noteText,
             onValueChange = { newText ->
                 noteText = newText
-                onScreenEvent(NoteScreenEvent.NoteTextChanged(newText = newText))
+                onEvent(NoteScreenContract.Event.NoteTextChanged(newText))
             },
             textStyle = TextStyle(
                 color = Color.White,
                 fontFamily = SourceSans,
-                fontSize = screenState.note.textSize,
-                lineHeight = screenState.note.paragraph,
-                fontWeight = FontWeight(screenState.note.fontWeight.weight),
-                fontStyle = FontStyle(screenState.note.textStyle.value),
-                textDecoration = screenState.note.textDecoration.decoration
+                fontSize = state.note.textSize,
+                lineHeight = state.note.paragraph,
+                fontWeight = FontWeight(state.note.fontWeight.weight),
+                fontStyle = FontStyle(state.note.textStyle.value),
+                textDecoration = state.note.textDecoration.decoration
             )
         )
     }
@@ -268,7 +305,7 @@ private fun NoteTopBar(
     modifier: Modifier = Modifier,
     noteTitle: String,
     isFavorite: Boolean,
-    onScreenEvent: (NoteScreenEvent) -> Unit
+    onEvent: (NoteScreenContract.Event) -> Unit
 ) {
     val focusRequester = remember { FocusRequester() }
 
@@ -293,7 +330,7 @@ private fun NoteTopBar(
             value = titleText,
             onValueChange = { newText ->
                 titleText = newText
-                onScreenEvent(NoteScreenEvent.NoteTitleChanged(newTitle = newText))
+                onEvent(NoteScreenContract.Event.NoteTitleChanged(newText))
             },
             textStyle = TextStyle(
                 color = Color.White,
@@ -315,9 +352,9 @@ private fun NoteTopBar(
             NoteOptionsPopup(
                 onDismiss = { popUpController = false },
                 isFavorite = isFavorite,
-                onScreenEvent = { event ->
+                onEvent = { event ->
                     popUpController = false
-                    onScreenEvent(event)
+                    onEvent(event)
                 }
             )
     }
@@ -327,7 +364,7 @@ private fun NoteTopBar(
 private fun NoteOptionsPopup(
     onDismiss: () -> Unit,
     isFavorite: Boolean,
-    onScreenEvent: (NoteScreenEvent) -> Unit
+    onEvent: (NoteScreenContract.Event) -> Unit
 ) {
     Popup(
         onDismissRequest = onDismiss,
@@ -346,7 +383,7 @@ private fun NoteOptionsPopup(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { onScreenEvent(NoteScreenEvent.SaveNote) },
+                    .clickable { onEvent(NoteScreenContract.Event.SaveNote) },
                 horizontalArrangement = Arrangement.spacedBy(15.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -364,7 +401,7 @@ private fun NoteOptionsPopup(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { onScreenEvent(NoteScreenEvent.ToggleFavorite) },
+                    .clickable { onEvent(NoteScreenContract.Event.ToggleFavorite) },
                 horizontalArrangement = Arrangement.spacedBy(15.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -385,7 +422,7 @@ private fun NoteOptionsPopup(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { onScreenEvent(NoteScreenEvent.ArchiveNote) },
+                    .clickable { onEvent(NoteScreenContract.Event.ArchiveNote) },
                 horizontalArrangement = Arrangement.spacedBy(15.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -409,7 +446,7 @@ private fun NoteOptionsPopup(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { onScreenEvent(NoteScreenEvent.DeleteNote) },
+                    .clickable { onEvent(NoteScreenContract.Event.DeleteNote) },
                 horizontalArrangement = Arrangement.spacedBy(15.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -506,8 +543,8 @@ private fun NoteDateFolder(modifier: Modifier = Modifier, noteDate: String, note
 private fun NoteSettings(
     modifier: Modifier = Modifier,
     contentPadding: Dp,
-    textSize: String,
-    onScreenEvent: (NoteScreenEvent) -> Unit
+    textSize: TextUnit,
+    onEvent: (NoteScreenContract.Event) -> Unit
 ) {
     var paragraphPopupController by remember { mutableStateOf(value = false) }
     var textSizePopupController by remember { mutableStateOf(value = false) }
@@ -555,7 +592,8 @@ private fun NoteSettings(
                 if (paragraphPopupController)
                     ParagraphPopUp(
                         onDismiss = { paragraphPopupController = false },
-                        onScreenEvent = onScreenEvent
+                        textSize = textSize,
+                        onEvent = onEvent
                     )
             }
             Row(
@@ -563,7 +601,9 @@ private fun NoteSettings(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = textSize,
+                    text = textSize.value
+                        .toInt()
+                        .toString(),
                     color = Color.White,
                     fontFamily = SourceSans,
                     fontSize = 16.sp,
@@ -581,8 +621,10 @@ private fun NoteSettings(
                 if (textSizePopupController)
                     TextSizePopup(
                         onDismiss = { textSizePopupController = false },
-                        onScreenEvent = onScreenEvent,
-                        textSize = textSize
+                        onEvent = onEvent,
+                        textSize = textSize.value
+                            .toInt()
+                            .toString()
                     )
             }
             Row(
@@ -592,21 +634,21 @@ private fun NoteSettings(
                 Icon(
                     modifier = Modifier
                         .size(20.dp)
-                        .clickable { onScreenEvent(NoteScreenEvent.ToggleTextWeight) },
+                        .clickable { onEvent(NoteScreenContract.Event.ToggleTextWeight) },
                     painter = painterResource(id = R.drawable.ic_bold),
                     contentDescription = null
                 )
                 Icon(
                     modifier = Modifier
                         .size(20.dp)
-                        .clickable { onScreenEvent(NoteScreenEvent.ToggleTextStyle) },
+                        .clickable { onEvent(NoteScreenContract.Event.ToggleTextStyle) },
                     painter = painterResource(id = R.drawable.ic_italic),
                     contentDescription = null
                 )
                 Icon(
                     modifier = Modifier
                         .size(20.dp)
-                        .clickable { onScreenEvent(NoteScreenEvent.ToggleTextDecoration) },
+                        .clickable { onEvent(NoteScreenContract.Event.ToggleTextDecoration) },
                     painter = painterResource(id = R.drawable.ic_underline),
                     contentDescription = null
                 )
@@ -630,12 +672,16 @@ private fun NoteSettings(
 }
 
 @Composable
-private fun ParagraphPopUp(onDismiss: () -> Unit, onScreenEvent: (NoteScreenEvent) -> Unit) {
-    val paragraphs = remember {
+private fun ParagraphPopUp(
+    onDismiss: () -> Unit,
+    textSize: TextUnit,
+    onEvent: (NoteScreenContract.Event) -> Unit
+) {
+    val paragraphs = remember(textSize) {
         hashMapOf(
             TextUnit.Unspecified to "1",
-            28.sp to "1.5",
-            38.sp to "2"
+            (textSize * 1.5) to "1.5",
+            (textSize * 2) to "2"
         )
     }
 
@@ -655,7 +701,7 @@ private fun ParagraphPopUp(onDismiss: () -> Unit, onScreenEvent: (NoteScreenEven
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable {
-                            onScreenEvent(NoteScreenEvent.NoteParagraphChanged(entity.key))
+                            onEvent(NoteScreenContract.Event.NoteParagraphChanged(entity.key))
                         }
                         .padding(horizontal = 15.dp, vertical = 10.dp),
                     horizontalArrangement = Arrangement.Center
@@ -683,7 +729,7 @@ private fun ParagraphPopUp(onDismiss: () -> Unit, onScreenEvent: (NoteScreenEven
 @Composable
 private fun TextSizePopup(
     onDismiss: () -> Unit,
-    onScreenEvent: (NoteScreenEvent) -> Unit,
+    onEvent: (NoteScreenContract.Event) -> Unit,
     textSize: String
 ) {
     Popup(
@@ -702,7 +748,7 @@ private fun TextSizePopup(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable {
-                            onScreenEvent(NoteScreenEvent.NoteTextSizeChanged(num.sp))
+                            onEvent(NoteScreenContract.Event.NoteTextSizeChanged(num.sp))
                         }
                         .padding(horizontal = 15.dp, vertical = 10.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,

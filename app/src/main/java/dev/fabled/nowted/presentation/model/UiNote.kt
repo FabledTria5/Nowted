@@ -3,9 +3,9 @@ package dev.fabled.nowted.presentation.model
 import androidx.compose.runtime.Stable
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.sp
-import dev.fabled.nowted.presentation.utils.NoteTextDecoration
-import dev.fabled.nowted.presentation.utils.NoteTextStyle
-import dev.fabled.nowted.presentation.utils.NoteTextWeight
+import dev.fabled.nowted.presentation.core.NoteTextDecoration
+import dev.fabled.nowted.presentation.core.NoteTextStyle
+import dev.fabled.nowted.presentation.core.NoteTextWeight
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 

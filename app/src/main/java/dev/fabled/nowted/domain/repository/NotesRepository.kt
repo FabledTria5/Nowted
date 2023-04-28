@@ -6,6 +6,23 @@ import kotlinx.coroutines.flow.Flow
 interface NotesRepository {
 
     /**
+     * [Flow] that represents the name of current folder. Each emission triggers [notesInFolder]
+     * to update itself depending in it's value
+     */
+    val currentFolder: Flow<String>
+
+    /**
+     * [Flow] that represents notes in current folder. On each emission of [currentFolder] will
+     * trigger collecting notes from this folder.
+     */
+    val notesInFolder: Flow<List<NoteModel>>
+
+    /**
+     * Flow that represents current selected note. If creating new note, value is null
+     */
+    val currentNote: Flow<NoteModel?>
+
+    /**
      * Returns flow of strings that represents recent notes names
      *
      * @param limit defines amount of recent items to be received in flow
@@ -19,27 +36,18 @@ interface NotesRepository {
     suspend fun addRecent(noteName: String)
 
     /**
-     * Returns all notes from folder with given [folderName]
+     * Updates current folder, that triggers update of notes list for this folder
      *
-     * @param folderName target folder name
-     * @return flow of [NoteModel] from given folder
+     * @param folderName name of folder
      */
-    fun getNotesFromFolder(folderName: String): Flow<List<NoteModel>>
+    fun openFolder(folderName: String)
 
     /**
-     * Returns flow, where all notes are marked as favorite
+     * Selects note with specified name.
      *
-     * @return [Flow] of [NoteModel]
+     * @param noteName triggers [currentNote] to be updated by given value
      */
-    fun getFavoriteNotes(): Flow<List<NoteModel>>
-
-    /**
-     * Returns single [NoteModel]
-     *
-     * @param name name of note
-     * @return [NoteModel] that matches given [name]. Can be null if note does not exist
-     */
-    suspend fun getNote(name: String): NoteModel?
+    fun openNote(noteName: String)
 
     /**
      * Checks if note with given name exists

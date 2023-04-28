@@ -38,9 +38,8 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.StarBorder
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -52,18 +51,16 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import dev.fabled.nowted.R
+import dev.fabled.nowted.presentation.core.use
 import dev.fabled.nowted.presentation.model.UiNote
 import dev.fabled.nowted.presentation.ui.screens.note.NoteScreen
-import dev.fabled.nowted.presentation.ui.theme.NowtedTheme
 import dev.fabled.nowted.presentation.ui.theme.SourceSans
-import dev.fabled.nowted.presentation.viewmodel.MainViewModel
 import org.koin.androidx.compose.koinViewModel
 
 class NotesListScreen : Screen {
@@ -71,27 +68,27 @@ class NotesListScreen : Screen {
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
-        val mainViewModel = koinViewModel<MainViewModel>()
+        val viewModel: NotesListViewModel = koinViewModel()
 
-        val notesListScreenState by mainViewModel.notesListScreenState.collectAsState()
+        val (state, event) = use(viewModel = viewModel)
 
-        val onScreenEvent: (NotesListScreenEvent) -> Unit = remember {
-            { event ->
-                mainViewModel.onNotesListScreenEvent(event)
-
-                when (event) {
-                    is NotesListScreenEvent.OnNoteClick, NotesListScreenEvent.OnCreateFirstNote ->
-                        navigator.push(NoteScreen())
-                }
-            }
+        LaunchedEffect(key1 = Unit) {
+            event.invoke(NotesListScreenContract.Event.OnReadNotesFromFolder)
         }
 
         NotesListScreenContent(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(top = 20.dp),
-            screenState = notesListScreenState,
-            onScreenEvent = onScreenEvent
+            screenState = state,
+            onNewItemClick = {
+                event.invoke(NotesListScreenContract.Event.OnCreateNote)
+                navigator.push(NoteScreen())
+            },
+            onNoteClick = { noteTitle ->
+                event.invoke(NotesListScreenContract.Event.OnNoteClick(noteTitle))
+                navigator.push(NoteScreen())
+            }
         )
     }
 }
@@ -100,15 +97,10 @@ class NotesListScreen : Screen {
 @Composable
 fun NotesListScreenContent(
     modifier: Modifier = Modifier,
-    screenState: NotesListScreenState,
-    onScreenEvent: (NotesListScreenEvent) -> Unit
+    screenState: NotesListScreenContract.State,
+    onNewItemClick: () -> Unit,
+    onNoteClick: (String) -> Unit
 ) {
-    val onNoteClick: (UiNote) -> Unit = remember {
-        { note ->
-            onScreenEvent(NotesListScreenEvent.OnNoteClick(note.noteTitle))
-        }
-    }
-
     Column(
         modifier = modifier.imePadding(),
         verticalArrangement = Arrangement.spacedBy(15.dp)
@@ -140,7 +132,7 @@ fun NotesListScreenContent(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(150.dp),
-                        onItemClick = { onScreenEvent(NotesListScreenEvent.OnCreateFirstNote) }
+                        onItemClick = onNewItemClick
                     )
                 }
             }
@@ -206,7 +198,7 @@ fun EmptyItem(modifier: Modifier = Modifier, onItemClick: () -> Unit) {
 private fun NoteListItem(
     modifier: Modifier = Modifier,
     noteItem: UiNote,
-    onNoteClick: (UiNote) -> Unit,
+    onNoteClick: (String) -> Unit,
     selectedNoteName: String
 ) {
     // Using concrete colors instead of manipulate White color alpha, cause card doesn't show
@@ -222,7 +214,7 @@ private fun NoteListItem(
 
     Card(
         modifier = modifier,
-        onClick = { onNoteClick(noteItem) },
+        onClick = { onNoteClick(noteItem.noteTitle) },
         shape = RoundedCornerShape(3.dp),
         elevation = 5.dp,
         backgroundColor = backgroundColor
@@ -277,33 +269,6 @@ private fun NoteListItem(
                     overflow = TextOverflow.Ellipsis
                 )
             }
-        }
-    }
-}
-
-@Preview
-@Composable
-fun NewNoteItems() {
-    NowtedTheme {
-        Box(
-            modifier = Modifier
-                .padding(20.dp)
-                .fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            NoteListItem(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(100.dp),
-                noteItem = UiNote(
-                    noteTitle = "Some fancy title",
-                    noteText = "Some fancy text",
-                    noteDate = "26/04/2023",
-                    isFavorite = true
-                ),
-                onNoteClick = {},
-                selectedNoteName = ""
-            )
         }
     }
 }
