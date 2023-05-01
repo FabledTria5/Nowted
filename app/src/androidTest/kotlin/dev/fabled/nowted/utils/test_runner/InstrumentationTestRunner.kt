@@ -5,6 +5,7 @@ import android.content.Context
 import androidx.test.runner.AndroidJUnitRunner
 import dev.fabled.nowted.TestApplication
 
+@Suppress("unused")
 class InstrumentationTestRunner : AndroidJUnitRunner() {
 
     override fun newApplication(
