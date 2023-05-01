@@ -56,6 +56,14 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
+    kotlin {
+        sourceSets.debug {
+            kotlin.srcDirs += File("build/generated/ksp/debug/kotlin")
+        }
+        sourceSets.release {
+            kotlin.srcDirs += File("build/generated/ksp/release/kotlin")
+        }
+    }
     kotlinOptions {
         jvmTarget = JavaVersion.VERSION_17.toString()
     }
