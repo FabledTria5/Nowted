@@ -9,7 +9,7 @@
     lifecycle-runtime-compose = "2.6.1"
     activity-compose = "1.7.1"
     compose-bom = "2023.04.01"
-    voyager = "1.0.0-rc04"
+    voyager = "1.0.0-rc05"
     koin = "3.4.4"
     koin-test = "3.4.0"
     accompanist = "0.31.1-alpha"
