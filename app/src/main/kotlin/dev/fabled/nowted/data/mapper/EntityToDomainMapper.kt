@@ -10,7 +10,7 @@ fun List<NoteEntity>.toNotesModels(): List<NoteModel> = map { it.toNoteModel() }
 fun List<FolderEntity>.toFoldersModels(): List<FolderModel> = map { it.toFolderModel() }
 
 fun FolderEntity.toFolderModel(): FolderModel =
-    FolderModel(folderName = folderName, isPrimary = isPrimary)
+    FolderModel(folderName = folderName, isSystemFolder = !isPrimary)
 
 fun NoteEntity.toNoteModel(): NoteModel = NoteModel(
     noteTitle = noteName,

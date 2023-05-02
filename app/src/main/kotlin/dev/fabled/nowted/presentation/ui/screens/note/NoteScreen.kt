@@ -60,6 +60,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
 import cafe.adriel.voyager.core.screen.Screen
+import cafe.adriel.voyager.core.screen.ScreenKey
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import dev.fabled.nowted.R
@@ -75,7 +76,10 @@ import kotlinx.coroutines.delay
 import org.koin.androidx.compose.koinViewModel
 import kotlin.time.Duration.Companion.milliseconds
 
-class NoteScreen : Screen {
+class NoteScreen(private val screenKey: String = "") : Screen {
+
+    override val key: ScreenKey
+        get() = screenKey.ifEmpty { super.key }
 
     @Composable
     override fun Content() {
@@ -132,7 +136,7 @@ class NoteScreen : Screen {
             NoteScreenContent(
                 modifier = Modifier
                     .padding(padding)
-                    .padding(vertical = 20.dp)
+                    .padding(vertical = 50.dp)
                     .fillMaxSize(),
                 state = state,
                 onEvent = event::invoke

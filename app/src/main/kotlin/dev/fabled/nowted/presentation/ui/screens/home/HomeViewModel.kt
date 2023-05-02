@@ -2,7 +2,7 @@ package dev.fabled.nowted.presentation.ui.screens.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import dev.fabled.nowted.domain.use_cases.common.GetCurrentFolderName
+import dev.fabled.nowted.domain.use_cases.common.GetCurrentFolder
 import dev.fabled.nowted.domain.use_cases.common.GetCurrentNoteName
 import dev.fabled.nowted.domain.use_cases.common.OpenNote
 import dev.fabled.nowted.domain.use_cases.home.CollectFolders
@@ -30,7 +30,7 @@ class HomeViewModel(
     private val createNewFolder: CreateFolder,
     private val openFolder: OpenFolder,
     private val openNote: OpenNote,
-    private val getCurrentFolderName: GetCurrentFolderName,
+    private val getCurrentFolder: GetCurrentFolder,
     private val getCurrentNoteName: GetCurrentNoteName
 ) : ViewModel(), HomeScreenContract {
 
@@ -54,13 +54,13 @@ class HomeViewModel(
     }
 
     private fun getSelectedItems() {
-        getCurrentFolderName()
+        getCurrentFolder()
             .catch { exception ->
                 Timber.e(exception)
             }
-            .onEach { folderName ->
+            .onEach { folderModel ->
                 mutableState.update { state ->
-                    state.copy(selectedFolderName = folderName)
+                    state.copy(selectedFolderName = folderModel.folderName)
                 }
             }
             .launchIn(viewModelScope)
@@ -137,7 +137,9 @@ class HomeViewModel(
     }
 
     private fun selectFolder(folderName: String) {
-        openFolder(folderName = folderName)
+        viewModelScope.launch {
+            openFolder(folderName = folderName)
+        }
     }
 
     private fun setNote(noteName: String = "") {

@@ -8,7 +8,7 @@ import dev.fabled.nowted.data.repository.NotesRepositoryImpl
 import dev.fabled.nowted.domain.dispatchers.AppDispatchers
 import dev.fabled.nowted.domain.repository.FoldersRepository
 import dev.fabled.nowted.domain.repository.NotesRepository
-import dev.fabled.nowted.domain.use_cases.common.GetCurrentFolderName
+import dev.fabled.nowted.domain.use_cases.common.GetCurrentFolder
 import dev.fabled.nowted.domain.use_cases.common.GetCurrentNoteName
 import dev.fabled.nowted.domain.use_cases.common.OpenNote
 import dev.fabled.nowted.domain.use_cases.home.AddRecent
@@ -21,6 +21,7 @@ import dev.fabled.nowted.domain.use_cases.note.GetCurrentNote
 import dev.fabled.nowted.domain.use_cases.note.RemoveNote
 import dev.fabled.nowted.domain.use_cases.note.RestoreNote
 import dev.fabled.nowted.domain.use_cases.note.UpdateOrCreateNote
+import dev.fabled.nowted.domain.use_cases.notes_list.GetFavoriteNotes
 import dev.fabled.nowted.domain.use_cases.notes_list.GetNotesFromCurrentFolder
 import dev.fabled.nowted.presentation.ui.screens.home.HomeViewModel
 import dev.fabled.nowted.presentation.ui.screens.note.NoteViewModel
@@ -55,7 +56,7 @@ val repositoryModule = module {
 }
 
 val useCasesModule = module {
-    single { GetCurrentFolderName(notesRepository = get()) }
+    single { GetCurrentFolder(foldersRepository = get()) }
     single { GetCurrentNoteName(notesRepository = get()) }
     single { OpenNote(notesRepository = get()) }
 
@@ -63,16 +64,17 @@ val useCasesModule = module {
     single { CollectFolders(foldersRepository = get()) }
     single { CollectRecents(notesRepository = get()) }
     single { CreateFolder(foldersRepository = get()) }
-    single { OpenFolder(notesRepository = get()) }
+    single { OpenFolder(foldersRepository = get()) }
 
     single { GetCurrentNoteName(notesRepository = get()) }
     single { GetCurrentNote(notesRepository = get()) }
     single { ChangeNoteFavoriteState(notesRepository = get()) }
-    single { RemoveNote(notesRepository = get()) }
-    single { RestoreNote(notesRepository = get()) }
+    single { RemoveNote(notesRepository = get(), foldersRepository = get()) }
+    single { RestoreNote(foldersRepository = get()) }
     single { UpdateOrCreateNote(notesRepository = get()) }
 
     single { GetNotesFromCurrentFolder(notesRepository = get()) }
+    single { GetFavoriteNotes(notesRepository = get()) }
 }
 
 val utilsModule = module {

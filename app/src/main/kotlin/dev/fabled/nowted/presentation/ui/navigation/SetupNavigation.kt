@@ -16,9 +16,11 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import cafe.adriel.voyager.core.platform.multiplatformName
 import cafe.adriel.voyager.navigator.Navigator
 import dev.fabled.nowted.presentation.core.WindowType
 import dev.fabled.nowted.presentation.core.collectInLaunchedEffect
+import dev.fabled.nowted.presentation.core.distinctReplace
 import dev.fabled.nowted.presentation.core.rememberWindowSize
 import dev.fabled.nowted.presentation.core.snackBar
 import dev.fabled.nowted.presentation.core.use
@@ -33,6 +35,7 @@ import dev.fabled.nowted.presentation.ui.screens.note.NoteScreen
 import dev.fabled.nowted.presentation.ui.screens.notes_list.NotesListScreenContent
 import dev.fabled.nowted.presentation.ui.screens.notes_list.NotesListScreenContract
 import dev.fabled.nowted.presentation.ui.screens.notes_list.NotesListViewModel
+import dev.fabled.nowted.presentation.ui.screens.restore.RestoreNoteScreen
 import dev.fabled.nowted.presentation.ui.theme.SecondaryBackground
 import org.koin.androidx.compose.koinViewModel
 
@@ -77,16 +80,30 @@ private fun ExpandedNavigation() {
                     .fillMaxHeight()
                     .fillMaxWidth(fraction = .25f)
                     .padding(top = 30.dp),
-                openNote = { navigator.replace(NoteScreen()) },
+                openNote = {
+                    navigator.distinctReplace(screen = NoteScreen()) {
+                        lastItem.key == EmptyScreen::class.multiplatformName
+                                || lastItem.key == RestoreNoteScreen::class.multiplatformName
+                    }
+                },
             )
             NotesListScreenRoute(
                 modifier = Modifier
                     .fillMaxHeight()
                     .fillMaxWidth(fraction = .3f)
                     .background(SecondaryBackground)
-                    .padding(top = 30.dp)
+                    .padding(top = 30.dp),
+                openNote = { noteName ->
+                    navigator.distinctReplace(screen = NoteScreen(noteName)) {
+                        lastItem.key == EmptyScreen::class.multiplatformName
+                                || lastItem.key == RestoreNoteScreen::class.multiplatformName
+                    }
+                }
             )
-            FadeTransition(navigator = navigator, modifier = Modifier.fillMaxSize())
+            FadeTransition(
+                navigator = navigator,
+                modifier = Modifier.fillMaxSize()
+            )
         }
     }
 }
@@ -147,6 +164,7 @@ fun HomeScreenRoute(
             },
             onNewNoteClick = {
                 event.invoke(HomeScreenContract.Event.OpenNote())
+                openNote()
             },
             onSearchQueryChange = { query ->
                 event.invoke(HomeScreenContract.Event.UpdateSearchQuery(query))
@@ -169,6 +187,7 @@ fun HomeScreenRoute(
  */
 @Composable
 private fun NotesListScreenRoute(
+    openNote: (String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: NotesListViewModel = koinViewModel()
 ) {
@@ -181,9 +200,13 @@ private fun NotesListScreenRoute(
     NotesListScreenContent(
         modifier = modifier,
         screenState = state,
-        onNewItemClick = { event.invoke(NotesListScreenContract.Event.OnCreateNote) },
+        onNewItemClick = {
+            event.invoke(NotesListScreenContract.Event.OnCreateNote)
+            openNote("")
+        },
         onNoteClick = { noteName ->
             event.invoke(NotesListScreenContract.Event.OnNoteClick(noteName))
+            openNote(noteName)
         }
     )
 }

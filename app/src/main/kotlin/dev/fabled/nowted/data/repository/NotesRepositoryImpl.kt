@@ -21,10 +21,7 @@ class NotesRepositoryImpl(
     private val dispatchers: AppDispatchers
 ) : NotesRepository {
 
-    private val mutableFolderName = MutableStateFlow(value = "")
     private val mutableNoteName = MutableStateFlow(value = "")
-
-    override val currentFolderName: Flow<String> = mutableFolderName.asStateFlow()
     override val currentNoteName: Flow<String> = mutableNoteName.asStateFlow()
 
     override fun getRecents(limit: Int): Flow<List<String>> = notesDao.getRecents()
@@ -40,18 +37,16 @@ class NotesRepositoryImpl(
         notesDao.addRecent(RecentEntity(noteName = noteName))
     }
 
-    override fun openFolder(folderName: String) {
-        mutableFolderName.update { folderName }
-    }
-
     override fun getNotesFromFolder(folderName: String): Flow<List<NoteModel>> =
         notesDao.getNotesInFolder(folderName)
             .map { it.toNotesModels() }
             .flowOn(dispatchers.ioDispatcher)
 
-    override fun selectNote(noteName: String) {
-        mutableNoteName.update { noteName }
-    }
+    override fun getFavoriteNotes(): Flow<List<NoteModel>> = notesDao.getFavoriteNotes()
+        .map { it.toNotesModels() }
+        .flowOn(dispatchers.ioDispatcher)
+
+    override fun selectNote(noteName: String) = mutableNoteName.update { noteName }
 
     override fun getNoteByName(noteName: String): Flow<NoteModel?> =
         notesDao.getNoteByName(noteName)
@@ -70,11 +65,6 @@ class NotesRepositoryImpl(
     override suspend fun deleteNote(noteName: String) = withContext(dispatchers.ioDispatcher) {
         notesDao.removeNote(noteName = noteName)
     }
-
-    override suspend fun changeNoteFolder(noteName: String, noteFolder: String) =
-        withContext(dispatchers.ioDispatcher) {
-            notesDao.changeFolder(noteName = noteName, newFolder = noteFolder)
-        }
 
     override suspend fun toggleFavoriteState(name: String, newState: Boolean) =
         withContext(dispatchers.ioDispatcher) {

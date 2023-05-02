@@ -6,6 +6,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import cafe.adriel.voyager.core.screen.Screen
+import cafe.adriel.voyager.navigator.Navigator
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
@@ -37,6 +39,10 @@ fun <T> SharedFlow<T>.collectInLaunchedEffect(block: suspend (value: T) -> Unit)
     LaunchedEffect(key1 = this) {
         collectLatest(block)
     }
+}
+
+fun Navigator.distinctReplace(screen: Screen, condition: Navigator.() -> Boolean) {
+    if (condition()) replace(screen)
 }
 
 data class StateDispatchEffect<STATE, EVENT, EFFECT>(

@@ -4,7 +4,7 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.fabled.nowted.domain.model.Resource
-import dev.fabled.nowted.domain.use_cases.common.GetCurrentFolderName
+import dev.fabled.nowted.domain.use_cases.common.GetCurrentFolder
 import dev.fabled.nowted.domain.use_cases.common.GetCurrentNoteName
 import dev.fabled.nowted.domain.use_cases.note.ChangeNoteFavoriteState
 import dev.fabled.nowted.domain.use_cases.note.GetCurrentNote
@@ -33,7 +33,7 @@ import timber.log.Timber
 class NoteViewModel(
     private val getCurrentNoteName: GetCurrentNoteName,
     private val getCurrentNote: GetCurrentNote,
-    private val getCurrentFolderName: GetCurrentFolderName,
+    private val getCurrentFolder: GetCurrentFolder,
     private val updateOrCreateNote: UpdateOrCreateNote,
     private val removeNote: RemoveNote,
     private val changeNoteFavoriteState: ChangeNoteFavoriteState
@@ -69,8 +69,8 @@ class NoteViewModel(
                 else
                     getCurrentNote(noteName = noteName)
             }
-            .combine(getCurrentFolderName()) { model, folderName ->
-                model to folderName
+            .combine(getCurrentFolder()) { model, folderModel ->
+                model to folderModel.folderName
             }
             .catch { exception ->
                 Timber.e(exception)

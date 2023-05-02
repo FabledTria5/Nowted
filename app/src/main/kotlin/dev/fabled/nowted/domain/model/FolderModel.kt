@@ -1,6 +1,6 @@
 package dev.fabled.nowted.domain.model
 
 data class FolderModel(
-    val folderName: String,
-    val isPrimary: Boolean,
+    val folderName: String = "",
+    val isSystemFolder: Boolean = true,
 )

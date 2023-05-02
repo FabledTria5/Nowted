@@ -6,11 +6,6 @@ import kotlinx.coroutines.flow.Flow
 interface NotesRepository {
 
     /**
-     * [Flow] that represents the name of current folder
-     */
-    val currentFolderName: Flow<String>
-
-    /**
      * [Flow] that represents name of selected note
      */
     val currentNoteName: Flow<String>
@@ -29,19 +24,17 @@ interface NotesRepository {
     suspend fun addRecent(noteName: String)
 
     /**
-     * Updates current folder, that triggers update of notes list for this folder
-     *
-     * @param folderName name of folder
-     */
-    fun openFolder(folderName: String)
-
-    /**
      * Collects notes from given folder and returns it as [Flow]
      *
      * @param folderName name of folder to collect notes
      * @return [Flow] containing list if notes in folder
      */
     fun getNotesFromFolder(folderName: String): Flow<List<NoteModel>>
+
+    /**
+     * Collects all favorite notes
+     */
+    fun getFavoriteNotes(): Flow<List<NoteModel>>
 
     /**
      * Selects note with specified name.
@@ -80,14 +73,6 @@ interface NotesRepository {
      * @param noteName used to delete note with this name
      */
     suspend fun deleteNote(noteName: String)
-
-    /**
-     * Changing folder for note
-     *
-     * @param noteName name of target note
-     * @param noteFolder new folder for given note
-     */
-    suspend fun changeNoteFolder(noteName: String, noteFolder: String)
 
     /**
      * Changing favorite state of note

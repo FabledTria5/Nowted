@@ -126,7 +126,10 @@ fun NotesListScreenContent(
             verticalArrangement = Arrangement.spacedBy(20.dp),
             contentPadding = PaddingValues(start = 20.dp, top = 15.dp, end = 20.dp, bottom = 30.dp)
         ) {
-            if (screenState.notesList.isEmpty()) {
+            if (screenState.notesList.isEmpty()
+                && !screenState.isSystemFolder
+                && !screenState.isLoading
+            ) {
                 item {
                     EmptyItem(
                         modifier = Modifier
@@ -228,7 +231,7 @@ private fun NoteListItem(
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.Top
             ) {
                 Text(
                     modifier = Modifier.fillMaxWidth(fraction = .9f),

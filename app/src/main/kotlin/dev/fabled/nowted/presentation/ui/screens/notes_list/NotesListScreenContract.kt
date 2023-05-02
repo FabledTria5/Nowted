@@ -9,7 +9,9 @@ interface NotesListScreenContract :
     UnidirectionalViewModel<NotesListScreenContract.State, NotesListScreenContract.Event, NotesListScreenContract.Effect> {
 
     data class State(
+        val isLoading: Boolean = true,
         val folderName: String = "",
+        val isSystemFolder: Boolean = true,
         val selectedNoteName: String = "",
         val notesList: ImmutableList<UiNote> = persistentListOf()
     )

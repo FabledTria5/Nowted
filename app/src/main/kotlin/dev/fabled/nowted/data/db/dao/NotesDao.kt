@@ -29,10 +29,13 @@ interface NotesDao {
     }
 
     @Upsert
-    fun addFolder(folderEntity: FolderEntity)
+    suspend fun addFolder(folderEntity: FolderEntity)
 
     @Query(value = "SELECT * FROM folders_table WHERE is_primary = 1 ORDER BY id DESC")
     fun getFolders(): Flow<List<FolderEntity>>
+
+    @Query(value = "SELECT * FROM folders_table WHERE folder_name = :folderName")
+    suspend fun getFolder(folderName: String): FolderEntity
 
     @Upsert
     suspend fun addNote(noteEntity: NoteEntity)

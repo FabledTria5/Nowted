@@ -2,8 +2,9 @@ package dev.fabled.nowted.presentation.ui.screens.notes_list
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import dev.fabled.nowted.domain.use_cases.common.GetCurrentFolderName
+import dev.fabled.nowted.domain.use_cases.common.GetCurrentFolder
 import dev.fabled.nowted.domain.use_cases.common.OpenNote
+import dev.fabled.nowted.domain.use_cases.notes_list.GetFavoriteNotes
 import dev.fabled.nowted.domain.use_cases.notes_list.GetNotesFromCurrentFolder
 import dev.fabled.nowted.presentation.core.mapAsync
 import dev.fabled.nowted.presentation.mapper.toUiModel
@@ -16,6 +17,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -24,7 +26,8 @@ import kotlinx.coroutines.launch
 import timber.log.Timber
 
 class NotesListViewModel(
-    private val getCurrentFolderName: GetCurrentFolderName,
+    private val getCurrentFolder: GetCurrentFolder,
+    private val getFavoriteNotes: GetFavoriteNotes,
     private val collectNotes: GetNotesFromCurrentFolder,
     private val openNote: OpenNote
 ) : ViewModel(), NotesListScreenContract {
@@ -43,18 +46,27 @@ class NotesListViewModel(
 
     @OptIn(ExperimentalCoroutinesApi::class)
     private fun readData() {
-        getCurrentFolderName()
-            .onEach { folderName ->
+        getCurrentFolder()
+            .filter { it.folderName.isNotEmpty() }
+            .onEach { folderModel ->
                 mutableState.update { state ->
-                    state.copy(folderName = folderName)
+                    state.copy(
+                        isLoading = true,
+                        folderName = folderModel.folderName,
+                        isSystemFolder = folderModel.isSystemFolder
+                    )
                 }
             }
-            .flatMapLatest { folderName ->
-                collectNotes(folderName)
+            .flatMapLatest { folderModel ->
+                if (folderModel.folderName == "Favorites" && folderModel.isSystemFolder)
+                    getFavoriteNotes()
+                else
+                    collectNotes(folderName = folderModel.folderName)
             }
             .onEach { models ->
                 mutableState.update { state ->
                     state.copy(
+                        isLoading = false,
                         notesList = models
                             .mapAsync { it.toUiModel() }
                             .toImmutableList()
