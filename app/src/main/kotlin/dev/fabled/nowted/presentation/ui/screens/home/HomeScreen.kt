@@ -95,12 +95,15 @@ class HomeScreen : Screen {
             when (it) {
                 HomeScreenContract.Effect.FolderCreated ->
                     Toast.makeText(context, "Folder created", Toast.LENGTH_SHORT).show()
+
                 else -> Unit
             }
         }
 
         HomeScreenContent(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .padding(top = 20.dp)
+                .fillMaxSize(),
             state = state,
             onFolderClick = { folderName ->
                 event.invoke(HomeScreenContract.Event.OpenFolder(folderName))
