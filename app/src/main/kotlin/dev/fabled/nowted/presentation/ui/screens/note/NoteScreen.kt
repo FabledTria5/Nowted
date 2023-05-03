@@ -39,11 +39,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
@@ -71,6 +73,7 @@ import dev.fabled.nowted.presentation.ui.components.MyTextField
 import dev.fabled.nowted.presentation.ui.components.OptionsButton
 import dev.fabled.nowted.presentation.ui.screens.empty.EmptyScreen
 import dev.fabled.nowted.presentation.ui.screens.restore.RestoreNoteScreen
+import dev.fabled.nowted.presentation.ui.theme.LocalPaddings
 import dev.fabled.nowted.presentation.ui.theme.SourceSans
 import kotlinx.coroutines.delay
 import org.koin.androidx.compose.koinViewModel
@@ -81,14 +84,17 @@ class NoteScreen(private val screenKey: String = "") : Screen {
     override val key: ScreenKey
         get() = screenKey.ifEmpty { super.key }
 
+    @OptIn(ExperimentalComposeUiApi::class)
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
-        val viewModel = koinViewModel<NoteViewModel>()
+        val verticalPaddings = LocalPaddings.current
 
+        val viewModel = koinViewModel<NoteViewModel>()
         val (state, event, effect) = use(viewModel = viewModel)
 
         val snackbarHostState = remember { SnackbarHostState() }
+        val keyboardController = LocalSoftwareKeyboardController.current
 
         LaunchedEffect(key1 = Unit) {
             event.invoke(NoteScreenContract.Event.CollectCurrentNote)
@@ -98,29 +104,29 @@ class NoteScreen(private val screenKey: String = "") : Screen {
             when (it) {
                 NoteScreenContract.Effect.AddedToFavorite -> snackBar(
                     snackbarHostState = snackbarHostState,
-                    message = "Added to favorites!"
+                    message = "Added to favorites!",
+                    softwareKeyboardController = keyboardController
                 )
 
-                NoteScreenContract.Effect.FavoriteFailure -> snackBar(
-                    snackbarHostState = snackbarHostState,
-                    message = "Note does not exist!"
-                )
-
+                NoteScreenContract.Effect.FavoriteFailure,
                 NoteScreenContract.Effect.NoteDeleteError -> snackBar(
                     snackbarHostState = snackbarHostState,
-                    message = "Can not delete non existing note!"
+                    message = "Note does not exist!",
+                    softwareKeyboardController = keyboardController
                 )
 
                 NoteScreenContract.Effect.NoteDeleted -> navigator.replace(EmptyScreen())
 
                 NoteScreenContract.Effect.NoteSaveError -> snackBar(
                     snackbarHostState = snackbarHostState,
-                    message = "Error while saving note"
+                    message = "Error while saving note",
+                    softwareKeyboardController = keyboardController
                 )
 
                 NoteScreenContract.Effect.NoteSaved -> snackBar(
                     snackbarHostState = snackbarHostState,
-                    message = "Note has been saved!"
+                    message = "Note has been saved!",
+                    softwareKeyboardController = keyboardController
                 )
 
                 is NoteScreenContract.Effect.AddedToTrash -> {
@@ -136,7 +142,7 @@ class NoteScreen(private val screenKey: String = "") : Screen {
             NoteScreenContent(
                 modifier = Modifier
                     .padding(padding)
-                    .padding(vertical = 50.dp)
+                    .padding(vertical = verticalPaddings.mediumPadding)
                     .fillMaxSize(),
                 state = state,
                 onEvent = event::invoke

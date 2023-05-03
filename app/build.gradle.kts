@@ -86,8 +86,8 @@ dependencies {
     implementation(libs.core.ktx)
     implementation(libs.lifecycle.runtime.compose)
     implementation(libs.collections.immutable)
+    implementation(libs.splash.screen)
     implementation(libs.timber)
-    implementation(libs.preferences.datastore)
     coreLibraryDesugaring(libs.desugaring)
 
     // Compose

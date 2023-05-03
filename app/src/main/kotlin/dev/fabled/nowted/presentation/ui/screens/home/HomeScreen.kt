@@ -1,7 +1,8 @@
 package dev.fabled.nowted.presentation.ui.screens.home
 
-import android.widget.Toast
+import android.view.MotionEvent
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -27,6 +28,9 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.Button
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
+import androidx.compose.material.Scaffold
+import androidx.compose.material.SnackbarHost
+import androidx.compose.material.SnackbarHostState
 import androidx.compose.material.Text
 import androidx.compose.material.TextFieldDefaults
 import androidx.compose.material.icons.Icons
@@ -40,11 +44,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.input.pointer.pointerInteropFilter
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -63,6 +70,7 @@ import dev.fabled.nowted.presentation.core.TestTags.BUTTON_NEW_NOTE
 import dev.fabled.nowted.presentation.core.TestTags.ICONS_SEARCH
 import dev.fabled.nowted.presentation.core.TestTags.TEXT_FIELD_SEARCH
 import dev.fabled.nowted.presentation.core.collectInLaunchedEffect
+import dev.fabled.nowted.presentation.core.snackBar
 import dev.fabled.nowted.presentation.core.use
 import dev.fabled.nowted.presentation.model.MoreItem
 import dev.fabled.nowted.presentation.ui.components.MyOutlinedTextField
@@ -74,62 +82,73 @@ import dev.fabled.nowted.presentation.ui.theme.Kaushan
 import dev.fabled.nowted.presentation.ui.theme.Primary
 import dev.fabled.nowted.presentation.ui.theme.SourceSans
 import kotlinx.collections.immutable.ImmutableList
+import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 
 class HomeScreen : Screen {
 
+    @OptIn(ExperimentalComposeUiApi::class)
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
         val mainViewModel = koinViewModel<HomeViewModel>()
-        val context = LocalContext.current
+
+        val snackbarHostState = remember { SnackbarHostState() }
+        val keyboardController = LocalSoftwareKeyboardController.current
 
         val (state, event, effect) = use(viewModel = mainViewModel)
 
         LaunchedEffect(key1 = Unit) {
             event.invoke(HomeScreenContract.Event.GetFolders)
             event.invoke(HomeScreenContract.Event.GetSelections)
+            event.invoke(HomeScreenContract.Event.GetRecents)
         }
 
         effect.collectInLaunchedEffect {
             when (it) {
-                HomeScreenContract.Effect.FolderCreated ->
-                    Toast.makeText(context, "Folder created", Toast.LENGTH_SHORT).show()
+                is HomeScreenContract.Effect.OpenNote -> navigator.push(NoteScreen(it.noteName))
 
-                else -> Unit
+                HomeScreenContract.Effect.FolderCreated -> snackBar(
+                    snackbarHostState = snackbarHostState,
+                    message = "Created new folder!",
+                    softwareKeyboardController = keyboardController
+                )
+
+                HomeScreenContract.Effect.OpenFolder -> navigator.push(NotesListScreen())
             }
         }
 
-        HomeScreenContent(
+        Scaffold(
             modifier = Modifier
-                .padding(top = 20.dp)
-                .fillMaxSize(),
-            state = state,
-            onFolderClick = { folderName ->
-                event.invoke(HomeScreenContract.Event.OpenFolder(folderName))
-                navigator.push(NotesListScreen())
-            },
-            onRecentClick = { recentName ->
-                event.invoke(HomeScreenContract.Event.OpenNote(recentName))
-                navigator.push(NoteScreen())
-            },
-            onToggleSearch = {
-                event.invoke(HomeScreenContract.Event.ToggleSearch)
-            },
-            onNewNoteClick = {
-                event.invoke(HomeScreenContract.Event.OpenNote())
-                navigator.push(NoteScreen())
-            },
-            onSearchQueryChange = { query ->
-                event.invoke(HomeScreenContract.Event.UpdateSearchQuery(query))
-            },
-            onStartCreateNewFolderClick = {
-                event.invoke(HomeScreenContract.Event.OnStartCreateNewFolder)
-            },
-            onCreateNewFolderClick = { folderName ->
-                event.invoke(HomeScreenContract.Event.CreateFolder(folderName))
-            }
-        )
+                .fillMaxSize()
+                .padding(top = 20.dp),
+            snackbarHost = { SnackbarHost(snackbarHostState) }
+        ) { padding ->
+            HomeScreenContent(
+                modifier = Modifier
+                    .padding(padding)
+                    .fillMaxSize(),
+                state = state,
+                onFolderClick = { folderName ->
+                    event.invoke(HomeScreenContract.Event.OpenFolder(folderName))
+                },
+                onNoteClick = { noteName ->
+                    event.invoke(HomeScreenContract.Event.OpenNote(noteName))
+                },
+                onToggleSearch = {
+                    event.invoke(HomeScreenContract.Event.ToggleSearch)
+                },
+                onSearchQueryChange = { query ->
+                    event.invoke(HomeScreenContract.Event.UpdateSearchQuery(query))
+                },
+                onStartCreateNewFolderClick = {
+                    event.invoke(HomeScreenContract.Event.OnStartCreateNewFolder)
+                },
+                onCreateNewFolderClick = { folderName ->
+                    event.invoke(HomeScreenContract.Event.CreateFolder(folderName))
+                }
+            )
+        }
     }
 }
 
@@ -138,9 +157,8 @@ fun HomeScreenContent(
     modifier: Modifier = Modifier,
     state: HomeScreenContract.State,
     onFolderClick: (String) -> Unit,
-    onRecentClick: (String) -> Unit,
+    onNoteClick: (String) -> Unit,
     onToggleSearch: () -> Unit,
-    onNewNoteClick: () -> Unit,
     onSearchQueryChange: (String) -> Unit,
     onStartCreateNewFolderClick: () -> Unit,
     onCreateNewFolderClick: (String) -> Unit
@@ -156,7 +174,7 @@ fun HomeScreenContent(
             isSearching = state.isSearching,
             searchQuery = state.searchQuery,
             onToggleSearch = onToggleSearch,
-            onNewNoteClick = onNewNoteClick,
+            onNewNoteClick = { onNoteClick("") },
             onSearchQueryChange = onSearchQueryChange
         )
         LazyColumn(
@@ -166,7 +184,7 @@ fun HomeScreenContent(
             if (state.recentNotes.isNotEmpty()) {
                 recents(
                     recents = state.recentNotes,
-                    onRecentClick = onRecentClick,
+                    onRecentClick = onNoteClick,
                     selectedNoteName = state.selectedNoteName
                 )
             }
@@ -235,27 +253,12 @@ private fun HomeScreenTopContent(
             }
         }
         if (!isSearching) {
-            Button(
+            AddNoteButton(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(40.dp)
-                    .testTag(BUTTON_NEW_NOTE),
-                onClick = onNewNoteClick,
-                shape = RoundedCornerShape(3.dp)
-            ) {
-                Icon(
-                    modifier = Modifier.size(20.dp),
-                    imageVector = Icons.Default.Add,
-                    contentDescription = null
-                )
-                Text(
-                    modifier = Modifier.padding(start = 8.dp),
-                    text = stringResource(R.string.new_note),
-                    fontFamily = SourceSans,
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 16.sp
-                )
-            }
+                    .height(40.dp),
+                onClick = onNewNoteClick
+            )
         } else {
             MyTextField(
                 modifier = Modifier
@@ -288,6 +291,51 @@ private fun HomeScreenTopContent(
                 placeHolder = { Text(text = stringResource(R.string.search_note)) }
             )
         }
+    }
+}
+
+@OptIn(ExperimentalComposeUiApi::class)
+@Composable
+private fun AddNoteButton(modifier: Modifier = Modifier, onClick: () -> Unit) {
+    var isPressed by remember { mutableStateOf(value = false) }
+    val buttonScale by animateFloatAsState(
+        targetValue = if (isPressed) .95f else 1f,
+        animationSpec = tween(durationMillis = 250),
+        label = "button_scale"
+    )
+
+    Button(
+        modifier = modifier
+            .scale(buttonScale)
+            .pointerInteropFilter { event ->
+                when (event.action) {
+                    MotionEvent.ACTION_DOWN -> { isPressed = true }
+
+                    MotionEvent.ACTION_UP -> {
+                        isPressed = false
+                        onClick()
+                    }
+
+                    MotionEvent.ACTION_CANCEL -> { isPressed = false }
+                }
+                true
+            }
+            .testTag(BUTTON_NEW_NOTE),
+        onClick = onClick,
+        shape = RoundedCornerShape(3.dp)
+    ) {
+        Icon(
+            modifier = Modifier.size(20.dp),
+            imageVector = Icons.Default.Add,
+            contentDescription = null
+        )
+        Text(
+            modifier = Modifier.padding(start = 8.dp),
+            text = stringResource(R.string.new_note),
+            fontFamily = SourceSans,
+            fontWeight = FontWeight.SemiBold,
+            fontSize = 16.sp
+        )
     }
 }
 

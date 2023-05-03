@@ -234,7 +234,7 @@ private fun NoteListItem(
                 verticalAlignment = Alignment.Top
             ) {
                 Text(
-                    modifier = Modifier.fillMaxWidth(fraction = .9f),
+                    modifier = Modifier.fillMaxWidth(fraction = .85f),
                     text = noteItem.noteTitle,
                     fontFamily = SourceSans,
                     fontWeight = FontWeight.SemiBold,

@@ -48,7 +48,6 @@ class HomeViewModel(
         HomeScreenContract.Event.ToggleSearch -> toggleSearch()
         is HomeScreenContract.Event.UpdateSearchQuery -> updateSearchQuery(event.query)
         is HomeScreenContract.Event.CreateFolder -> createFolder(event.folderName)
-        is HomeScreenContract.Event.FavoriteNotesSelected -> getFavoriteNotes()
         is HomeScreenContract.Event.OpenFolder -> selectFolder(event.folderName)
         is HomeScreenContract.Event.OpenNote -> setNote(event.noteName)
     }
@@ -124,29 +123,28 @@ class HomeViewModel(
 
     private fun createFolder(folderName: String) {
         viewModelScope.launch {
-            launch {
-                mutableState.update { state ->
-                    state.copy(isCreatingFolder = false)
-                }
+            mutableState.update { state ->
+                state.copy(isCreatingFolder = false)
             }
 
-            launch {
-                createNewFolder(folderName = folderName)
-            }
+            createNewFolder(folderName = folderName)
+            effectFlow.emit(HomeScreenContract.Effect.FolderCreated)
         }
     }
 
     private fun selectFolder(folderName: String) {
         viewModelScope.launch {
             openFolder(folderName = folderName)
+
+            effectFlow.emit(HomeScreenContract.Effect.OpenFolder)
         }
     }
 
     private fun setNote(noteName: String = "") {
-        openNote(noteName = noteName)
-    }
+        viewModelScope.launch {
+            openNote(noteName = noteName)
 
-    private fun getFavoriteNotes() {
-
+            effectFlow.emit(HomeScreenContract.Effect.OpenNote(noteName))
+        }
     }
 }

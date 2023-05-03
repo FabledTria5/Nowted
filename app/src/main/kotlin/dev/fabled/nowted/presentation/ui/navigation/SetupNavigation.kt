@@ -14,10 +14,13 @@ import androidx.compose.material.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import cafe.adriel.voyager.core.platform.multiplatformName
+import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
+import cafe.adriel.voyager.navigator.currentOrThrow
 import dev.fabled.nowted.presentation.core.WindowType
 import dev.fabled.nowted.presentation.core.collectInLaunchedEffect
 import dev.fabled.nowted.presentation.core.distinctReplace
@@ -36,6 +39,8 @@ import dev.fabled.nowted.presentation.ui.screens.notes_list.NotesListScreenConte
 import dev.fabled.nowted.presentation.ui.screens.notes_list.NotesListScreenContract
 import dev.fabled.nowted.presentation.ui.screens.notes_list.NotesListViewModel
 import dev.fabled.nowted.presentation.ui.screens.restore.RestoreNoteScreen
+import dev.fabled.nowted.presentation.ui.theme.LocalPaddings
+import dev.fabled.nowted.presentation.ui.theme.LocalWindowSize
 import dev.fabled.nowted.presentation.ui.theme.SecondaryBackground
 import org.koin.androidx.compose.koinViewModel
 
@@ -46,7 +51,7 @@ import org.koin.androidx.compose.koinViewModel
  */
 @Composable
 fun SetupNavigation() {
-    val windowSize = rememberWindowSize()
+    val windowSize = LocalWindowSize.current
 
     when (windowSize.width) {
         WindowType.Compact -> CompactNavigation()
@@ -69,6 +74,8 @@ private fun CompactNavigation() {
  */
 @Composable
 private fun ExpandedNavigation() {
+    val verticalPaddings = LocalPaddings.current
+
     Navigator(EmptyScreen()) { navigator ->
         Row(
             modifier = Modifier
@@ -79,26 +86,14 @@ private fun ExpandedNavigation() {
                 modifier = Modifier
                     .fillMaxHeight()
                     .fillMaxWidth(fraction = .25f)
-                    .padding(top = 30.dp),
-                openNote = {
-                    navigator.distinctReplace(screen = NoteScreen()) {
-                        lastItem.key == EmptyScreen::class.multiplatformName
-                                || lastItem.key == RestoreNoteScreen::class.multiplatformName
-                    }
-                },
+                    .padding(top = verticalPaddings.normalPadding),
             )
             NotesListScreenRoute(
                 modifier = Modifier
                     .fillMaxHeight()
                     .fillMaxWidth(fraction = .3f)
                     .background(SecondaryBackground)
-                    .padding(top = 30.dp),
-                openNote = { noteName ->
-                    navigator.distinctReplace(screen = NoteScreen(noteName)) {
-                        lastItem.key == EmptyScreen::class.multiplatformName
-                                || lastItem.key == RestoreNoteScreen::class.multiplatformName
-                    }
-                }
+                    .padding(top = verticalPaddings.normalPadding),
             )
             FadeTransition(
                 navigator = navigator,
@@ -112,35 +107,44 @@ private fun ExpandedNavigation() {
 /**
  * Represents Home screen route for expanded navigation.
  *
- * @param openNote callback for expanded navigation to open note edit screen in note section
  * @param modifier a [Modifier] that applies for [HomeScreenContent]
  * @param viewModel [HomeViewModel] injected with Koin
  */
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun HomeScreenRoute(
-    openNote: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: HomeViewModel = koinViewModel()
 ) {
-    val (state, event, effect) = use(viewModel = viewModel)
+    val navigator = LocalNavigator.currentOrThrow
 
     val snackbarHostState = remember { SnackbarHostState() }
+    val keyboardController = LocalSoftwareKeyboardController.current
+
+    val (state, event, effect) = use(viewModel = viewModel)
 
     LaunchedEffect(key1 = Unit) {
         event.invoke(HomeScreenContract.Event.GetFolders)
         event.invoke(HomeScreenContract.Event.GetSelections)
+        event.invoke(HomeScreenContract.Event.GetRecents)
     }
 
     effect.collectInLaunchedEffect {
         when (it) {
+            is HomeScreenContract.Effect.OpenNote -> {
+                navigator.distinctReplace(screen = NoteScreen()) {
+                    lastItem.key == EmptyScreen::class.multiplatformName
+                            || lastItem.key == RestoreNoteScreen::class.multiplatformName
+                }
+            }
+
             HomeScreenContract.Effect.FolderCreated -> snackBar(
                 snackbarHostState = snackbarHostState,
-                message = "Created new folder!"
+                message = "Created new folder!",
+                softwareKeyboardController = keyboardController
             )
 
-            HomeScreenContract.Effect.OpenNote -> {
-                openNote()
-            }
+            else -> Unit
         }
     }
 
@@ -156,15 +160,11 @@ fun HomeScreenRoute(
             onFolderClick = { folderName ->
                 event.invoke(HomeScreenContract.Event.OpenFolder(folderName))
             },
-            onRecentClick = { noteName ->
+            onNoteClick = { noteName ->
                 event.invoke(HomeScreenContract.Event.OpenNote(noteName))
             },
             onToggleSearch = {
                 event.invoke(HomeScreenContract.Event.ToggleSearch)
-            },
-            onNewNoteClick = {
-                event.invoke(HomeScreenContract.Event.OpenNote())
-                openNote()
             },
             onSearchQueryChange = { query ->
                 event.invoke(HomeScreenContract.Event.UpdateSearchQuery(query))
@@ -187,26 +187,33 @@ fun HomeScreenRoute(
  */
 @Composable
 private fun NotesListScreenRoute(
-    openNote: (String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: NotesListViewModel = koinViewModel()
 ) {
-    val (state, event) = use(viewModel = viewModel)
+    val navigator = LocalNavigator.currentOrThrow
+    val (state, event, effect) = use(viewModel = viewModel)
 
     LaunchedEffect(key1 = Unit) {
         event.invoke(NotesListScreenContract.Event.ReadScreenData)
     }
 
+    effect.collectInLaunchedEffect {
+        when(it) {
+            is NotesListScreenContract.Effect.OpenNote -> {
+                navigator.distinctReplace(screen = NoteScreen()) {
+                    lastItem.key == EmptyScreen::class.multiplatformName
+                            || lastItem.key == RestoreNoteScreen::class.multiplatformName
+                }
+            }
+        }
+    }
+
     NotesListScreenContent(
         modifier = modifier,
         screenState = state,
-        onNewItemClick = {
-            event.invoke(NotesListScreenContract.Event.OnCreateNote)
-            openNote("")
-        },
+        onNewItemClick = { event.invoke(NotesListScreenContract.Event.OnCreateNote) },
         onNoteClick = { noteName ->
             event.invoke(NotesListScreenContract.Event.OnNoteClick(noteName))
-            openNote(noteName)
         }
     )
 }

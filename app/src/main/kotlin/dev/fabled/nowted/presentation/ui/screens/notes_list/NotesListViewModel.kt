@@ -82,6 +82,8 @@ class NotesListViewModel(
     private fun setNote(noteName: String = "") {
         viewModelScope.launch {
             openNote(noteName)
+
+            effectFlow.emit(NotesListScreenContract.Effect.OpenNote(noteName))
         }
     }
 }

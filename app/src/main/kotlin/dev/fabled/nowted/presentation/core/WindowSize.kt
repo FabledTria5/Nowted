@@ -12,8 +12,8 @@ import androidx.compose.ui.platform.LocalConfiguration
  * which one of them use to build different UI.
  */
 data class WindowSize(
-    val width: WindowType,
-    val height: WindowType
+    val width: WindowType = WindowType.Compact,
+    val height: WindowType = WindowType.Compact
 )
 
 /**

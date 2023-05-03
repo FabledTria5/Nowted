@@ -70,11 +70,6 @@ interface HomeScreenContract :
         data class UpdateSearchQuery(val query: String) : Event()
 
         /**
-         * Called when user wants to see all favorite notes
-         */
-        object FavoriteNotesSelected : Event()
-
-        /**
          * Called initially to observe selected folder name and selected note names
          *
          * @see State.selectedNoteName
@@ -118,7 +113,17 @@ interface HomeScreenContract :
          */
         object FolderCreated : Effect()
 
-        object OpenNote : Effect()
+        /**
+         * Should be called, when user wants to navigate to note screen
+         *
+         * @property noteName used as key for NoteScreen
+         */
+        data class OpenNote(val noteName: String) : Effect()
+
+        /**
+         * Should be called when user select folder
+         */
+        object OpenFolder : Effect()
     }
 
 }
