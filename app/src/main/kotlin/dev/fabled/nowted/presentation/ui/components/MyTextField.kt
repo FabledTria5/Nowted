@@ -57,9 +57,9 @@ fun MyTextField(
     val interactionSource = remember { MutableInteractionSource() }
 
     BasicTextField(
-        modifier = modifier,
         value = value,
         onValueChange = onValueChange,
+        modifier = modifier,
         textStyle = textStyle,
         cursorBrush = SolidColor(cursorColor),
         interactionSource = interactionSource,

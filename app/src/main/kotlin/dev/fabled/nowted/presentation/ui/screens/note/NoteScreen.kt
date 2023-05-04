@@ -45,6 +45,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -66,9 +67,9 @@ import cafe.adriel.voyager.core.screen.ScreenKey
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import dev.fabled.nowted.R
-import dev.fabled.nowted.presentation.core.collectInLaunchedEffect
 import dev.fabled.nowted.presentation.core.snackBar
-import dev.fabled.nowted.presentation.core.use
+import dev.fabled.nowted.presentation.core.viewmodel.collectInLaunchedEffect
+import dev.fabled.nowted.presentation.core.viewmodel.use
 import dev.fabled.nowted.presentation.ui.components.MyTextField
 import dev.fabled.nowted.presentation.ui.components.OptionsButton
 import dev.fabled.nowted.presentation.ui.screens.empty.EmptyScreen
@@ -89,6 +90,7 @@ class NoteScreen(private val screenKey: String = "") : Screen {
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
         val verticalPaddings = LocalPaddings.current
+        val context = LocalContext.current
 
         val viewModel = koinViewModel<NoteViewModel>()
         val (state, event, effect) = use(viewModel = viewModel)
@@ -104,14 +106,7 @@ class NoteScreen(private val screenKey: String = "") : Screen {
             when (it) {
                 NoteScreenContract.Effect.AddedToFavorite -> snackBar(
                     snackbarHostState = snackbarHostState,
-                    message = "Added to favorites!",
-                    softwareKeyboardController = keyboardController
-                )
-
-                NoteScreenContract.Effect.FavoriteFailure,
-                NoteScreenContract.Effect.NoteDeleteError -> snackBar(
-                    snackbarHostState = snackbarHostState,
-                    message = "Note does not exist!",
+                    message = context.getString(R.string.added_to_favorites),
                     softwareKeyboardController = keyboardController
                 )
 
@@ -119,19 +114,25 @@ class NoteScreen(private val screenKey: String = "") : Screen {
 
                 NoteScreenContract.Effect.NoteSaveError -> snackBar(
                     snackbarHostState = snackbarHostState,
-                    message = "Error while saving note",
+                    message = context.getString(R.string.note_save_error),
                     softwareKeyboardController = keyboardController
                 )
 
                 NoteScreenContract.Effect.NoteSaved -> snackBar(
                     snackbarHostState = snackbarHostState,
-                    message = "Note has been saved!",
+                    message = context.getString(R.string.note_save_success),
                     softwareKeyboardController = keyboardController
                 )
 
                 is NoteScreenContract.Effect.AddedToTrash -> {
                     navigator.replace(RestoreNoteScreen(it.noteName, it.noteFolder))
                 }
+
+                NoteScreenContract.Effect.Archived -> snackBar(
+                    snackbarHostState = snackbarHostState,
+                    message = context.getString(R.string.note_archived),
+                    softwareKeyboardController = keyboardController
+                )
             }
         }
 
@@ -140,12 +141,12 @@ class NoteScreen(private val screenKey: String = "") : Screen {
             snackbarHost = { SnackbarHost(snackbarHostState) },
         ) { padding ->
             NoteScreenContent(
+                state = state,
+                onEvent = event::invoke,
                 modifier = Modifier
                     .padding(padding)
                     .padding(vertical = verticalPaddings.mediumPadding)
-                    .fillMaxSize(),
-                state = state,
-                onEvent = event::invoke
+                    .fillMaxSize()
             )
         }
     }
@@ -153,9 +154,9 @@ class NoteScreen(private val screenKey: String = "") : Screen {
 
 @Composable
 fun NoteScreenContent(
-    modifier: Modifier = Modifier,
     state: NoteScreenContract.State,
-    onEvent: (NoteScreenContract.Event) -> Unit
+    onEvent: (NoteScreenContract.Event) -> Unit,
+    modifier: Modifier = Modifier
 ) {
     val scrollState = rememberScrollState()
     val focusRequester = remember { FocusRequester() }
@@ -172,37 +173,38 @@ fun NoteScreenContent(
         verticalArrangement = Arrangement.spacedBy(30.dp)
     ) {
         NoteTopBar(
-            modifier = Modifier
-                .padding(horizontal = 20.dp)
-                .fillMaxWidth(),
             noteTitle = state.note.noteTitle,
             isFavorite = state.note.isFavorite,
+            isNoteExists = state.note.isNoteExists,
             onEvent = onEvent,
-            primaryTextFieldFocusRequester = focusRequester
+            primaryTextFieldFocusRequester = focusRequester,
+            modifier = Modifier
+                .padding(horizontal = 20.dp)
+                .fillMaxWidth()
         )
         NoteDateFolder(
+            noteDate = state.note.noteDate,
+            noteFolder = state.note.noteFolder,
             modifier = Modifier
                 .padding(horizontal = 20.dp)
-                .fillMaxWidth(),
-            noteDate = state.note.noteDate,
-            noteFolder = state.note.noteFolder
+                .fillMaxWidth()
         )
         NoteSettings(
-            modifier = Modifier.fillMaxWidth(),
             contentPadding = 20.dp,
             textSize = state.note.textSize,
-            onEvent = onEvent
+            onEvent = onEvent,
+            modifier = Modifier.fillMaxWidth()
         )
         MyTextField(
-            modifier = Modifier
-                .padding(horizontal = 20.dp)
-                .fillMaxSize()
-                .focusRequester(focusRequester),
             value = noteText,
             onValueChange = { newText ->
                 noteText = newText
                 onEvent(NoteScreenContract.Event.NoteTextChanged(newText))
             },
+            modifier = Modifier
+                .padding(horizontal = 20.dp)
+                .fillMaxSize()
+                .focusRequester(focusRequester),
             textStyle = TextStyle(
                 color = Color.White,
                 fontFamily = SourceSans,
@@ -220,6 +222,7 @@ fun NoteScreenContent(
 private fun NoteTopBar(
     noteTitle: String,
     isFavorite: Boolean,
+    isNoteExists: Boolean,
     onEvent: (NoteScreenContract.Event) -> Unit,
     modifier: Modifier = Modifier,
     primaryTextFieldFocusRequester: FocusRequester = remember { FocusRequester() }
@@ -236,19 +239,17 @@ private fun NoteTopBar(
         }
     }
 
-    Box(
-        modifier = modifier
-    ) {
+    Box(modifier = modifier) {
         MyTextField(
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .fillMaxWidth(fraction = .8f)
-                .focusRequester(focusRequester),
             value = titleText,
             onValueChange = { newText ->
                 titleText = newText
                 onEvent(NoteScreenContract.Event.NoteTitleChanged(newText))
             },
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .fillMaxWidth(fraction = .8f)
+                .focusRequester(focusRequester),
             textStyle = TextStyle(
                 color = Color.White,
                 fontFamily = SourceSans,
@@ -264,16 +265,17 @@ private fun NoteTopBar(
             )
         )
         OptionsButton(
+            isClicked = popUpController,
+            onClick = { popUpController = true },
             modifier = Modifier
                 .align(Alignment.TopEnd)
-                .size(30.dp),
-            isClicked = popUpController,
-            onClick = { popUpController = true }
+                .size(30.dp)
         )
         if (popUpController) {
             NoteOptionsPopup(
                 onDismiss = { popUpController = false },
                 isFavorite = isFavorite,
+                isNoteExists = isNoteExists,
                 onEvent = { event ->
                     popUpController = false
 
@@ -290,6 +292,7 @@ private fun NoteTopBar(
 @Composable
 private fun NoteOptionsPopup(
     onDismiss: () -> Unit,
+    isNoteExists: Boolean,
     isFavorite: Boolean,
     onEvent: (NoteScreenContract.Event) -> Unit
 ) {
@@ -315,9 +318,9 @@ private fun NoteOptionsPopup(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
-                    modifier = Modifier.size(20.dp),
                     imageVector = Icons.Default.SaveAlt,
-                    contentDescription = null
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp)
                 )
                 Text(
                     text = stringResource(R.string.save_note),
@@ -328,14 +331,16 @@ private fun NoteOptionsPopup(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { onEvent(NoteScreenContract.Event.ToggleFavorite) },
+                    .clickable(enabled = isNoteExists) {
+                        onEvent(NoteScreenContract.Event.ToggleFavorite)
+                    },
                 horizontalArrangement = Arrangement.spacedBy(15.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
-                    modifier = Modifier.size(20.dp),
                     imageVector = if (isFavorite) Icons.Outlined.StarBorder else Icons.Default.Star,
-                    contentDescription = null
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp)
                 )
                 Text(
                     text = if (isFavorite)
@@ -349,14 +354,16 @@ private fun NoteOptionsPopup(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { onEvent(NoteScreenContract.Event.ArchiveNote) },
+                    .clickable(enabled = isNoteExists) {
+                        onEvent(NoteScreenContract.Event.ArchiveNote)
+                    },
                 horizontalArrangement = Arrangement.spacedBy(15.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
-                    modifier = Modifier.size(20.dp),
                     painter = painterResource(id = R.drawable.ic_archive),
-                    contentDescription = null
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp)
                 )
                 Text(
                     text = stringResource(R.string.archived),
@@ -373,14 +380,16 @@ private fun NoteOptionsPopup(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { onEvent(NoteScreenContract.Event.DeleteNote) },
+                    .clickable(enabled = isNoteExists) {
+                        onEvent(NoteScreenContract.Event.DeleteNote)
+                    },
                 horizontalArrangement = Arrangement.spacedBy(15.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
-                    modifier = Modifier.size(20.dp),
                     painter = painterResource(id = R.drawable.ic_trash),
-                    contentDescription = null
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp)
                 )
                 Text(
                     text = stringResource(R.string.delete),
@@ -403,16 +412,16 @@ private fun NoteDateFolder(modifier: Modifier = Modifier, noteDate: String, note
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
-                modifier = Modifier.size(18.dp),
                 painter = painterResource(id = R.drawable.ic_calendar),
                 contentDescription = null,
+                modifier = Modifier.size(18.dp),
                 tint = Color.White.copy(alpha = .6f)
             )
             Text(
+                text = stringResource(R.string.date),
                 modifier = Modifier
                     .padding(start = 20.dp)
                     .width(100.dp),
-                text = stringResource(R.string.date),
                 color = Color.White.copy(alpha = .6f),
                 fontFamily = SourceSans,
                 fontWeight = FontWeight.SemiBold,
@@ -438,23 +447,22 @@ private fun NoteDateFolder(modifier: Modifier = Modifier, noteDate: String, note
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
-                modifier = Modifier.size(18.dp),
                 painter = painterResource(id = R.drawable.ic_folder_closed),
                 contentDescription = null,
+                modifier = Modifier.size(18.dp),
                 tint = Color.White.copy(alpha = .6f)
             )
             Text(
+                text = stringResource(R.string.folder),
                 modifier = Modifier
                     .padding(start = 20.dp)
                     .width(100.dp),
-                text = "Folder",
                 color = Color.White.copy(alpha = .6f),
                 fontFamily = SourceSans,
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 14.sp,
             )
             Text(
-                modifier = Modifier.clickable { },
                 text = noteFolder,
                 color = Color.White,
                 fontFamily = SourceSans,
@@ -468,10 +476,10 @@ private fun NoteDateFolder(modifier: Modifier = Modifier, noteDate: String, note
 
 @Composable
 private fun NoteSettings(
-    modifier: Modifier = Modifier,
     contentPadding: Dp,
     textSize: TextUnit,
-    onEvent: (NoteScreenContract.Event) -> Unit
+    onEvent: (NoteScreenContract.Event) -> Unit,
+    modifier: Modifier = Modifier
 ) {
     var paragraphPopupController by remember { mutableStateOf(value = false) }
     var textSizePopupController by remember { mutableStateOf(value = false) }
@@ -500,8 +508,8 @@ private fun NoteSettings(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    modifier = Modifier.width(105.dp),
                     text = stringResource(R.string.paragraph),
+                    modifier = Modifier.width(105.dp),
                     color = Color.White,
                     fontFamily = SourceSans,
                     fontSize = 16.sp,
@@ -509,19 +517,20 @@ private fun NoteSettings(
                     overflow = TextOverflow.Ellipsis
                 )
                 Icon(
+                    imageVector = Icons.Default.KeyboardArrowDown,
+                    contentDescription = null,
                     modifier = Modifier
                         .padding(start = 8.dp)
                         .size(20.dp),
-                    imageVector = Icons.Default.KeyboardArrowDown,
-                    contentDescription = null,
                     tint = Color.White
                 )
-                if (paragraphPopupController)
+                if (paragraphPopupController) {
                     ParagraphPopUp(
                         onDismiss = { paragraphPopupController = false },
                         textSize = textSize,
                         onEvent = onEvent
                     )
+                }
             }
             Row(
                 modifier = Modifier.clickable { textSizePopupController = true },
@@ -538,14 +547,14 @@ private fun NoteSettings(
                     overflow = TextOverflow.Ellipsis
                 )
                 Icon(
+                    imageVector = Icons.Default.KeyboardArrowDown,
+                    contentDescription = null,
                     modifier = Modifier
                         .padding(start = 8.dp)
                         .size(20.dp),
-                    imageVector = Icons.Default.KeyboardArrowDown,
-                    contentDescription = null,
                     tint = Color.White
                 )
-                if (textSizePopupController)
+                if (textSizePopupController) {
                     TextSizePopup(
                         onDismiss = { textSizePopupController = false },
                         onEvent = onEvent,
@@ -553,39 +562,40 @@ private fun NoteSettings(
                             .toInt()
                             .toString()
                     )
+                }
             }
             Row(
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
-                    modifier = Modifier
-                        .size(20.dp)
-                        .clickable { onEvent(NoteScreenContract.Event.ToggleTextWeight) },
                     painter = painterResource(id = R.drawable.ic_bold),
-                    contentDescription = null
-                )
-                Icon(
+                    contentDescription = null,
                     modifier = Modifier
                         .size(20.dp)
-                        .clickable { onEvent(NoteScreenContract.Event.ToggleTextStyle) },
+                        .clickable { onEvent(NoteScreenContract.Event.ToggleTextWeight) }
+                )
+                Icon(
                     painter = painterResource(id = R.drawable.ic_italic),
-                    contentDescription = null
-                )
-                Icon(
+                    contentDescription = null,
                     modifier = Modifier
                         .size(20.dp)
-                        .clickable { onEvent(NoteScreenContract.Event.ToggleTextDecoration) },
+                        .clickable { onEvent(NoteScreenContract.Event.ToggleTextStyle) }
+                )
+                Icon(
                     painter = painterResource(id = R.drawable.ic_underline),
-                    contentDescription = null
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(20.dp)
+                        .clickable { onEvent(NoteScreenContract.Event.ToggleTextDecoration) }
                 )
             }
             Icon(
+                painter = painterResource(id = R.drawable.ic_image),
+                contentDescription = null,
                 modifier = Modifier
                     .size(20.dp)
-                    .clickable { },
-                painter = painterResource(id = R.drawable.ic_image),
-                contentDescription = null
+                    .clickable { }
             )
         }
         Spacer(
@@ -640,7 +650,7 @@ private fun ParagraphPopUp(
                         fontSize = 16.sp
                     )
                 }
-                if (entity.value != "2")
+                if (entity.value != "2") {
                     Spacer(
                         modifier = Modifier
                             .padding(horizontal = 20.dp)
@@ -648,6 +658,7 @@ private fun ParagraphPopUp(
                             .fillMaxWidth()
                             .background(Color.White.copy(alpha = .1f))
                     )
+                }
             }
         }
     }
@@ -688,15 +699,16 @@ private fun TextSizePopup(
                         fontSize = 16.sp
                     )
 
-                    if (textSize == "$num")
+                    if (textSize == "$num") {
                         Icon(
-                            modifier = Modifier.size(20.dp),
                             imageVector = Icons.Default.Check,
-                            contentDescription = null
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp)
                         )
+                    }
                 }
 
-                if (num != 32)
+                if (num != 32) {
                     Spacer(
                         modifier = Modifier
                             .padding(horizontal = 20.dp)
@@ -704,6 +716,7 @@ private fun TextSizePopup(
                             .fillMaxWidth()
                             .background(Color.White.copy(alpha = .1f))
                     )
+                }
             }
         }
     }

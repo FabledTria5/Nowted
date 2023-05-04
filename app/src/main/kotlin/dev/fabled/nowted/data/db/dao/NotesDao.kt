@@ -29,15 +29,6 @@ interface NotesDao {
     }
 
     @Upsert
-    suspend fun addFolder(folderEntity: FolderEntity)
-
-    @Query(value = "SELECT * FROM folders_table WHERE is_primary = 1 ORDER BY id DESC")
-    fun getFolders(): Flow<List<FolderEntity>>
-
-    @Query(value = "SELECT * FROM folders_table WHERE folder_name = :folderName")
-    suspend fun getFolder(folderName: String): FolderEntity
-
-    @Upsert
     suspend fun addNote(noteEntity: NoteEntity)
 
     @Query(value = "SELECT * FROM notes_table WHERE parent_folder = :folderName")
@@ -45,13 +36,6 @@ interface NotesDao {
 
     @Query(value = "SELECT * FROM notes_table WHERE is_favorite = 1")
     fun getFavoriteNotes(): Flow<List<NoteEntity>>
-
-    @Query(
-        value = "UPDATE notes_table " +
-                "SET parent_folder = :newFolder " +
-                "WHERE note_name = :noteName"
-    )
-    suspend fun changeFolder(noteName: String, newFolder: String)
 
     @Query(value = "SELECT EXISTS (SELECT * FROM notes_table WHERE note_name = :name)")
     suspend fun isNoteExist(name: String): Boolean

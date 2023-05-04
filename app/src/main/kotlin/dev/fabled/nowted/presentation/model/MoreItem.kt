@@ -5,6 +5,9 @@ import androidx.annotation.StringRes
 import androidx.compose.runtime.Stable
 import dev.fabled.nowted.R
 
+/**
+ * Ui representation of system folders
+ */
 @Stable
 sealed class MoreItem(
     @DrawableRes val icon: Int,

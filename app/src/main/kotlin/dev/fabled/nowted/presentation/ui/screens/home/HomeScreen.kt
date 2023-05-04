@@ -1,8 +1,6 @@
 package dev.fabled.nowted.presentation.ui.screens.home
 
-import android.view.MotionEvent
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -26,6 +24,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.Button
+import androidx.compose.material.ButtonDefaults
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
 import androidx.compose.material.Scaffold
@@ -35,8 +34,6 @@ import androidx.compose.material.Text
 import androidx.compose.material.TextFieldDefaults
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.SearchOff
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -46,13 +43,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.pointerInteropFilter
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
@@ -66,23 +61,17 @@ import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import dev.fabled.nowted.R
-import dev.fabled.nowted.presentation.core.TestTags.BUTTON_NEW_NOTE
-import dev.fabled.nowted.presentation.core.TestTags.ICONS_SEARCH
-import dev.fabled.nowted.presentation.core.TestTags.TEXT_FIELD_SEARCH
-import dev.fabled.nowted.presentation.core.collectInLaunchedEffect
 import dev.fabled.nowted.presentation.core.snackBar
-import dev.fabled.nowted.presentation.core.use
+import dev.fabled.nowted.presentation.core.viewmodel.collectInLaunchedEffect
+import dev.fabled.nowted.presentation.core.viewmodel.use
 import dev.fabled.nowted.presentation.model.MoreItem
 import dev.fabled.nowted.presentation.ui.components.MyOutlinedTextField
-import dev.fabled.nowted.presentation.ui.components.MyTextField
 import dev.fabled.nowted.presentation.ui.screens.note.NoteScreen
 import dev.fabled.nowted.presentation.ui.screens.notes_list.NotesListScreen
 import dev.fabled.nowted.presentation.ui.theme.Active
 import dev.fabled.nowted.presentation.ui.theme.Kaushan
-import dev.fabled.nowted.presentation.ui.theme.Primary
 import dev.fabled.nowted.presentation.ui.theme.SourceSans
 import kotlinx.collections.immutable.ImmutableList
-import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 
 class HomeScreen : Screen {
@@ -92,6 +81,7 @@ class HomeScreen : Screen {
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
         val mainViewModel = koinViewModel<HomeViewModel>()
+        val context = LocalContext.current
 
         val snackbarHostState = remember { SnackbarHostState() }
         val keyboardController = LocalSoftwareKeyboardController.current
@@ -110,7 +100,7 @@ class HomeScreen : Screen {
 
                 HomeScreenContract.Effect.FolderCreated -> snackBar(
                     snackbarHostState = snackbarHostState,
-                    message = "Created new folder!",
+                    message = context.getString(R.string.folder_created),
                     softwareKeyboardController = keyboardController
                 )
 
@@ -125,9 +115,6 @@ class HomeScreen : Screen {
             snackbarHost = { SnackbarHost(snackbarHostState) }
         ) { padding ->
             HomeScreenContent(
-                modifier = Modifier
-                    .padding(padding)
-                    .fillMaxSize(),
                 state = state,
                 onFolderClick = { folderName ->
                     event.invoke(HomeScreenContract.Event.OpenFolder(folderName))
@@ -135,18 +122,15 @@ class HomeScreen : Screen {
                 onNoteClick = { noteName ->
                     event.invoke(HomeScreenContract.Event.OpenNote(noteName))
                 },
-                onToggleSearch = {
-                    event.invoke(HomeScreenContract.Event.ToggleSearch)
-                },
-                onSearchQueryChange = { query ->
-                    event.invoke(HomeScreenContract.Event.UpdateSearchQuery(query))
-                },
                 onStartCreateNewFolderClick = {
                     event.invoke(HomeScreenContract.Event.OnStartCreateNewFolder)
                 },
                 onCreateNewFolderClick = { folderName ->
                     event.invoke(HomeScreenContract.Event.CreateFolder(folderName))
-                }
+                },
+                modifier = Modifier
+                    .padding(padding)
+                    .fillMaxSize()
             )
         }
     }
@@ -154,28 +138,22 @@ class HomeScreen : Screen {
 
 @Composable
 fun HomeScreenContent(
-    modifier: Modifier = Modifier,
     state: HomeScreenContract.State,
     onFolderClick: (String) -> Unit,
     onNoteClick: (String) -> Unit,
-    onToggleSearch: () -> Unit,
-    onSearchQueryChange: (String) -> Unit,
     onStartCreateNewFolderClick: () -> Unit,
-    onCreateNewFolderClick: (String) -> Unit
+    onCreateNewFolderClick: (String) -> Unit,
+    modifier: Modifier = Modifier
 ) {
     Column(
         modifier = modifier.imePadding(),
         verticalArrangement = Arrangement.spacedBy(30.dp)
     ) {
         HomeScreenTopContent(
+            onNewNoteClick = { onNoteClick("") },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 20.dp),
-            isSearching = state.isSearching,
-            searchQuery = state.searchQuery,
-            onToggleSearch = onToggleSearch,
-            onNewNoteClick = { onNoteClick("") },
-            onSearchQueryChange = onSearchQueryChange
         )
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
@@ -206,15 +184,9 @@ fun HomeScreenContent(
 
 @Composable
 private fun HomeScreenTopContent(
-    modifier: Modifier = Modifier,
-    searchQuery: String,
-    isSearching: Boolean,
-    onToggleSearch: () -> Unit,
     onNewNoteClick: () -> Unit,
-    onSearchQueryChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    var query by remember(searchQuery) { mutableStateOf(value = "") }
-
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(30.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -231,111 +203,36 @@ private fun HomeScreenTopContent(
                     fontSize = 26.sp,
                 )
                 Icon(
-                    modifier = Modifier.size(15.dp),
                     painter = painterResource(id = R.drawable.ic_edit),
-                    contentDescription = null
-                )
-            }
-            IconButton(
-                modifier = Modifier
-                    .size(20.dp)
-                    .testTag(tag = ICONS_SEARCH),
-                onClick = onToggleSearch
-            ) {
-                Icon(
-                    imageVector = if (!isSearching)
-                        Icons.Default.Search
-                    else
-                        Icons.Default.SearchOff,
-                    contentDescription = stringResource(R.string.icon_search),
-                    tint = Color.White.copy(alpha = .4f)
+                    contentDescription = null,
+                    modifier = Modifier.size(15.dp)
                 )
             }
         }
-        if (!isSearching) {
-            AddNoteButton(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(40.dp),
-                onClick = onNewNoteClick
+        Button(
+            onClick = onNewNoteClick,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(40.dp),
+            shape = RoundedCornerShape(3.dp),
+            elevation = ButtonDefaults.elevation(
+                defaultElevation = 5.dp,
+                pressedElevation = 2.dp
             )
-        } else {
-            MyTextField(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(40.dp)
-                    .background(Primary, shape = RoundedCornerShape(3.dp))
-                    .testTag(TEXT_FIELD_SEARCH),
-                value = query,
-                onValueChange = { newText ->
-                    query = newText
-                    onSearchQueryChange(newText)
-                },
-                textStyle = TextStyle(
-                    color = Color.White,
-                    fontFamily = SourceSans,
-                    fontSize = 16.sp
-                ),
-                colors = TextFieldDefaults.textFieldColors(
-                    leadingIconColor = Color.White.copy(alpha = .6f)
-                ),
-                singleLine = true,
-                contentPaddingValues = PaddingValues(end = 15.dp),
-                leadingIcon = {
-                    Icon(
-                        modifier = Modifier.size(20.dp),
-                        painter = painterResource(id = R.drawable.ic_search),
-                        contentDescription = null
-                    )
-                },
-                placeHolder = { Text(text = stringResource(R.string.search_note)) }
+        ) {
+            Icon(
+                imageVector = Icons.Default.Add,
+                contentDescription = stringResource(R.string.icon_add),
+                modifier = Modifier.size(20.dp)
+            )
+            Text(
+                text = stringResource(R.string.new_note),
+                modifier = Modifier.padding(start = 8.dp),
+                fontFamily = SourceSans,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 16.sp
             )
         }
-    }
-}
-
-@OptIn(ExperimentalComposeUiApi::class)
-@Composable
-private fun AddNoteButton(modifier: Modifier = Modifier, onClick: () -> Unit) {
-    var isPressed by remember { mutableStateOf(value = false) }
-    val buttonScale by animateFloatAsState(
-        targetValue = if (isPressed) .95f else 1f,
-        animationSpec = tween(durationMillis = 250),
-        label = "button_scale"
-    )
-
-    Button(
-        modifier = modifier
-            .scale(buttonScale)
-            .pointerInteropFilter { event ->
-                when (event.action) {
-                    MotionEvent.ACTION_DOWN -> { isPressed = true }
-
-                    MotionEvent.ACTION_UP -> {
-                        isPressed = false
-                        onClick()
-                    }
-
-                    MotionEvent.ACTION_CANCEL -> { isPressed = false }
-                }
-                true
-            }
-            .testTag(BUTTON_NEW_NOTE),
-        onClick = onClick,
-        shape = RoundedCornerShape(3.dp)
-    ) {
-        Icon(
-            modifier = Modifier.size(20.dp),
-            imageVector = Icons.Default.Add,
-            contentDescription = null
-        )
-        Text(
-            modifier = Modifier.padding(start = 8.dp),
-            text = stringResource(R.string.new_note),
-            fontFamily = SourceSans,
-            fontWeight = FontWeight.SemiBold,
-            fontSize = 16.sp
-        )
     }
 }
 
@@ -347,8 +244,8 @@ private fun LazyListScope.recents(
 ) {
     item {
         Text(
-            modifier = Modifier.padding(start = 20.dp, bottom = 8.dp),
             text = stringResource(id = R.string.recents),
+            modifier = Modifier.padding(start = 20.dp, bottom = 8.dp),
             color = Color.White.copy(alpha = .6f),
             fontFamily = SourceSans,
             fontWeight = FontWeight.SemiBold,
@@ -383,9 +280,9 @@ private fun LazyListScope.recents(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
-                modifier = Modifier.size(20.dp),
                 painter = painterResource(id = R.drawable.ic_note),
                 contentDescription = null,
+                modifier = Modifier.size(20.dp),
                 tint = contentColor
             )
             Text(
@@ -426,7 +323,10 @@ private fun LazyListScope.folders(
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 14.sp
             )
-            IconButton(modifier = Modifier.size(20.dp), onClick = onCreateNewFolderClick) {
+            IconButton(
+                onClick = onCreateNewFolderClick,
+                modifier = Modifier.size(20.dp)
+            ) {
                 Icon(
                     painter = painterResource(id = R.drawable.ic_add_folder),
                     contentDescription = stringResource(id = R.string.add_folder_icon),
@@ -436,61 +336,7 @@ private fun LazyListScope.folders(
         }
     }
     if (isCreatingNewFolder) {
-        item {
-            var newFolderName by remember { mutableStateOf(value = "") }
-
-            val focusRequester = remember { FocusRequester() }
-
-            LaunchedEffect(key1 = Unit) {
-                focusRequester.requestFocus()
-            }
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 10.dp),
-                horizontalArrangement = Arrangement.spacedBy(15.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    modifier = Modifier.size(20.dp),
-                    painter = painterResource(id = R.drawable.ic_folder_opened),
-                    contentDescription = null,
-                    tint = Color.White
-                )
-                MyOutlinedTextField(
-                    modifier = Modifier.focusRequester(focusRequester),
-                    value = newFolderName,
-                    onValueChange = { newFolderName = it },
-                    textStyle = TextStyle(
-                        color = Color.White,
-                        fontFamily = SourceSans,
-                        fontWeight = FontWeight.Medium,
-                        fontSize = 16.sp
-                    ),
-                    colors = TextFieldDefaults.outlinedTextFieldColors(
-                        backgroundColor = Color.Transparent,
-                    ),
-                    singleLine = true,
-                    contentPaddingValues = PaddingValues(horizontal = 2.dp, vertical = 1.dp),
-                    border = {
-                        Box(
-                            modifier = Modifier.border(
-                                width = .5.dp,
-                                color = Color.White.copy(alpha = .4f)
-                            )
-                        )
-                    },
-                    keyboardOptions = KeyboardOptions(
-                        capitalization = KeyboardCapitalization.Sentences,
-                        imeAction = ImeAction.Done
-                    ),
-                    keyboardActions = KeyboardActions(
-                        onDone = { onNewFolderDoneClick(newFolderName) }
-                    )
-                )
-            }
-        }
+        createFolderItem(onCreateFolder = onNewFolderDoneClick)
     }
     items(items = folders) { name ->
         val backgroundColor by animateColorAsState(
@@ -545,6 +391,62 @@ private fun LazyListScope.folders(
 
 }
 
+private fun LazyListScope.createFolderItem(onCreateFolder: (String) -> Unit) = item {
+    var newFolderName by remember { mutableStateOf(value = "") }
+
+    val focusRequester = remember { FocusRequester() }
+
+    LaunchedEffect(key1 = Unit) {
+        focusRequester.requestFocus()
+    }
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp, vertical = 10.dp),
+        horizontalArrangement = Arrangement.spacedBy(15.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            painter = painterResource(id = R.drawable.ic_folder_opened),
+            contentDescription = null,
+            modifier = Modifier.size(20.dp),
+            tint = Color.White
+        )
+        MyOutlinedTextField(
+            value = newFolderName,
+            onValueChange = { newFolderName = it },
+            modifier = Modifier.focusRequester(focusRequester),
+            textStyle = TextStyle(
+                color = Color.White,
+                fontFamily = SourceSans,
+                fontWeight = FontWeight.Medium,
+                fontSize = 16.sp
+            ),
+            colors = TextFieldDefaults.outlinedTextFieldColors(
+                backgroundColor = Color.Transparent,
+            ),
+            singleLine = true,
+            contentPaddingValues = PaddingValues(horizontal = 2.dp, vertical = 1.dp),
+            border = {
+                Box(
+                    modifier = Modifier.border(
+                        width = .5.dp,
+                        color = Color.White.copy(alpha = .4f)
+                    )
+                )
+            },
+            keyboardOptions = KeyboardOptions(
+                capitalization = KeyboardCapitalization.Sentences,
+                imeAction = ImeAction.Done
+            ),
+            keyboardActions = KeyboardActions(
+                onDone = { onCreateFolder(newFolderName) }
+            )
+        )
+    }
+}
+
 private fun LazyListScope.more(
     selectedFolder: String,
     onFolderClick: (String) -> Unit
@@ -591,9 +493,9 @@ private fun LazyListScope.more(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
-                modifier = Modifier.size(20.dp),
                 painter = painterResource(id = item.icon),
                 contentDescription = null,
+                modifier = Modifier.size(20.dp),
                 tint = contentColor
             )
             Text(

@@ -1,6 +1,6 @@
 package dev.fabled.nowted.presentation.ui.screens.home
 
-import dev.fabled.nowted.presentation.core.UnidirectionalViewModel
+import dev.fabled.nowted.presentation.core.viewmodel.UnidirectionalViewModel
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 
@@ -63,13 +63,6 @@ interface HomeScreenContract :
         data class OpenNote(val noteName: String = "") : Event()
 
         /**
-         * Updates current search query.
-         *
-         * @property query new search query
-         */
-        data class UpdateSearchQuery(val query: String) : Event()
-
-        /**
          * Called initially to observe selected folder name and selected note names
          *
          * @see State.selectedNoteName
@@ -90,13 +83,6 @@ interface HomeScreenContract :
          * @see State.folders
          */
         object GetFolders : Event()
-
-        /**
-         * Called when user presses search button to show or hide search text field.
-         *
-         * @see State.isSearching
-         */
-        object ToggleSearch : Event()
 
         /**
          * Called when user presses new folder button. Not creating a new folder, but shows item

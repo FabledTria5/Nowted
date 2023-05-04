@@ -16,11 +16,18 @@
     <string name="note_restore_rationale">Don\'t want to lose this note? It\'s not too late! Just click the \"Restore\" button and it will be added back to your list. It\'s that simple.</string>
     <string name="restore">Restore</string>
     <string name="delete">Delete</string>
-    <string name="archived">Archived</string>
     <string name="add_to_favorites">Add to favorites</string>
     <string name="save_note">Save Note</string>
     <string name="icon_search">Search Icon</string>
     <string name="new_note">New Note</string>
     <string name="search_note">Search note</string>
     <string name="remove_from_favorites">Remove from favorites</string>
+    <string name="icon_add">Add icon</string>
+    <string name="added_to_favorites">Added to favorites!</string>
+    <string name="note_save_error">Error while saving note</string>
+    <string name="note_save_success">Note has been saved!</string>
+    <string name="note_archived">Note has been sent to Archive</string>
+    <string name="folder_created">Created new folder!</string>
+    <string name="folder">Folder</string>
+    <string name="archived">Archived</string>
 </resources>

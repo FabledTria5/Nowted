@@ -58,9 +58,9 @@ fun MyOutlinedTextField(
     val interactionSource = remember { MutableInteractionSource() }
 
     BasicTextField(
-        modifier = modifier,
         value = value,
         onValueChange = onValueChange,
+        modifier = modifier,
         interactionSource = interactionSource,
         textStyle = textStyle,
         cursorBrush = SolidColor(cursorColor),

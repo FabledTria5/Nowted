@@ -9,7 +9,7 @@ import dev.fabled.nowted.domain.use_cases.home.CollectFolders
 import dev.fabled.nowted.domain.use_cases.home.CollectRecents
 import dev.fabled.nowted.domain.use_cases.home.CreateFolder
 import dev.fabled.nowted.domain.use_cases.home.OpenFolder
-import dev.fabled.nowted.presentation.core.mapAsync
+import dev.fabled.nowted.domain.utils.mapAsync
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -31,7 +31,7 @@ class HomeViewModel(
     private val openFolder: OpenFolder,
     private val openNote: OpenNote,
     private val getCurrentFolder: GetCurrentFolder,
-    private val getCurrentNoteName: GetCurrentNoteName
+    private val getCurrentNoteName: GetCurrentNoteName,
 ) : ViewModel(), HomeScreenContract {
 
     private val mutableState = MutableStateFlow(HomeScreenContract.State())
@@ -45,8 +45,6 @@ class HomeViewModel(
         HomeScreenContract.Event.GetRecents -> getRecents()
         HomeScreenContract.Event.GetFolders -> getFolders()
         HomeScreenContract.Event.OnStartCreateNewFolder -> startFolderCreation()
-        HomeScreenContract.Event.ToggleSearch -> toggleSearch()
-        is HomeScreenContract.Event.UpdateSearchQuery -> updateSearchQuery(event.query)
         is HomeScreenContract.Event.CreateFolder -> createFolder(event.folderName)
         is HomeScreenContract.Event.OpenFolder -> selectFolder(event.folderName)
         is HomeScreenContract.Event.OpenNote -> setNote(event.noteName)
@@ -107,14 +105,6 @@ class HomeViewModel(
                 }
             }
             .launchIn(viewModelScope)
-    }
-
-    private fun updateSearchQuery(newQuery: String) = mutableState.update { state ->
-        state.copy(searchQuery = newQuery)
-    }
-
-    private fun toggleSearch() = mutableState.update { state ->
-        state.copy(isSearching = !state.isSearching)
     }
 
     private fun startFolderCreation() = mutableState.update { state ->

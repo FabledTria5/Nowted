@@ -4,6 +4,9 @@ import dev.fabled.nowted.domain.model.NoteModel
 import dev.fabled.nowted.presentation.core.NoteTextDecoration
 import dev.fabled.nowted.presentation.model.UiNote
 
+/**
+ * Map [UiNote] to [NoteModel]
+ */
 fun UiNote.toModel(): NoteModel = NoteModel(
     noteTitle = noteTitle,
     noteText = noteText,

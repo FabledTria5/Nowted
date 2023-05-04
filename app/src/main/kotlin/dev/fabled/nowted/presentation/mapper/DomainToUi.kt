@@ -7,6 +7,9 @@ import dev.fabled.nowted.presentation.core.getTextStyle
 import dev.fabled.nowted.presentation.core.getTextWeight
 import dev.fabled.nowted.presentation.model.UiNote
 
+/**
+ * Map [NoteModel] to [UiNote]
+ */
 fun NoteModel.toUiModel(): UiNote = UiNote(
     noteTitle = noteTitle,
     noteText = noteText,
@@ -17,5 +20,6 @@ fun NoteModel.toUiModel(): UiNote = UiNote(
     textStyle = fontStyle.getTextStyle(),
     textDecoration = isUnderline.getDecoration(),
     noteDate = noteDate,
-    isFavorite = isFavorite
+    isFavorite = isFavorite,
+    isNoteExists = true
 )

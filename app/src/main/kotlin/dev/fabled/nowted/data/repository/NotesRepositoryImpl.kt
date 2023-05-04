@@ -50,7 +50,7 @@ class NotesRepositoryImpl(
 
     override fun getNoteByName(noteName: String): Flow<NoteModel?> =
         notesDao.getNoteByName(noteName)
-            .map { it?.toNoteModel() }
+            .map { entities -> entities?.toNoteModel() }
             .flowOn(dispatchers.ioDispatcher)
 
     override suspend fun isNoteExists(name: String): Boolean =

@@ -1,7 +1,7 @@
 package dev.fabled.nowted.presentation.ui.screens.restore
 
 import androidx.compose.runtime.Stable
-import dev.fabled.nowted.presentation.core.UnidirectionalViewModel
+import dev.fabled.nowted.presentation.core.viewmodel.UnidirectionalViewModel
 
 interface RestoreScreenContract :
     UnidirectionalViewModel<RestoreScreenContract.State, RestoreScreenContract.Event, RestoreScreenContract.Effect> {

@@ -6,7 +6,7 @@ import dev.fabled.nowted.domain.use_cases.common.GetCurrentFolder
 import dev.fabled.nowted.domain.use_cases.common.OpenNote
 import dev.fabled.nowted.domain.use_cases.notes_list.GetFavoriteNotes
 import dev.fabled.nowted.domain.use_cases.notes_list.GetNotesFromCurrentFolder
-import dev.fabled.nowted.presentation.core.mapAsync
+import dev.fabled.nowted.domain.utils.mapAsync
 import dev.fabled.nowted.presentation.mapper.toUiModel
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.ExperimentalCoroutinesApi

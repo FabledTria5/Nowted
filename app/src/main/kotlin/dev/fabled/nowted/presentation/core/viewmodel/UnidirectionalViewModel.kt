@@ -1,4 +1,4 @@
-package dev.fabled.nowted.presentation.core
+package dev.fabled.nowted.presentation.core.viewmodel
 
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow

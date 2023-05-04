@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import dev.fabled.nowted.domain.model.Resource
 import dev.fabled.nowted.domain.use_cases.common.GetCurrentFolder
 import dev.fabled.nowted.domain.use_cases.common.GetCurrentNoteName
+import dev.fabled.nowted.domain.use_cases.note.ArchiveNote
 import dev.fabled.nowted.domain.use_cases.note.ChangeNoteFavoriteState
 import dev.fabled.nowted.domain.use_cases.note.GetCurrentNote
 import dev.fabled.nowted.domain.use_cases.note.RemoveNote
@@ -36,7 +37,8 @@ class NoteViewModel(
     private val getCurrentFolder: GetCurrentFolder,
     private val updateOrCreateNote: UpdateOrCreateNote,
     private val removeNote: RemoveNote,
-    private val changeNoteFavoriteState: ChangeNoteFavoriteState
+    private val changeNoteFavoriteState: ChangeNoteFavoriteState,
+    private val archiveNote: ArchiveNote
 ) : ViewModel(), NoteScreenContract {
 
     private val mutableState = MutableStateFlow(NoteScreenContract.State())
@@ -49,7 +51,7 @@ class NoteViewModel(
         NoteScreenContract.Event.CollectCurrentNote -> collectCurrentNote()
         NoteScreenContract.Event.SaveNote -> saveNote()
         NoteScreenContract.Event.ToggleFavorite -> changeFavoriteState()
-        NoteScreenContract.Event.ArchiveNote -> {}
+        NoteScreenContract.Event.ArchiveNote -> putToArchive()
         NoteScreenContract.Event.DeleteNote -> deleteNote()
         NoteScreenContract.Event.ToggleTextDecoration -> changeTextDecoration()
         NoteScreenContract.Event.ToggleTextStyle -> changeTextStyle()
@@ -151,10 +153,19 @@ class NoteViewModel(
             when (newState) {
                 Resource.Completed -> effectFlow.emit(NoteScreenContract.Effect.AddedToFavorite)
 
-                Resource.Failure -> effectFlow.emit(NoteScreenContract.Effect.FavoriteFailure)
+                is Resource.Error -> Timber.e(newState.error)
 
                 else -> Unit
             }
+        }
+    }
+
+    private fun putToArchive() {
+        viewModelScope.launch {
+            val noteName = state.value.note.noteTitle
+
+            archiveNote(noteName = noteName)
+            effectFlow.emit(NoteScreenContract.Effect.Archived)
         }
     }
 
@@ -183,7 +194,7 @@ class NoteViewModel(
                     }
                 }
 
-                Resource.Failure -> effectFlow.emit(NoteScreenContract.Effect.NoteDeleteError)
+                is Resource.Error -> Timber.e(result.error)
                 else -> Unit
             }
         }

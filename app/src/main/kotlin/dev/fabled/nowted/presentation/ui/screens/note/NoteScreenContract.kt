@@ -2,7 +2,7 @@ package dev.fabled.nowted.presentation.ui.screens.note
 
 import androidx.compose.runtime.Stable
 import androidx.compose.ui.unit.TextUnit
-import dev.fabled.nowted.presentation.core.UnidirectionalViewModel
+import dev.fabled.nowted.presentation.core.viewmodel.UnidirectionalViewModel
 import dev.fabled.nowted.presentation.model.UiNote
 
 interface NoteScreenContract :
@@ -48,11 +48,10 @@ interface NoteScreenContract :
 
         object AddedToFavorite : Effect()
 
-        object FavoriteFailure : Effect()
+        object Archived : Effect()
 
         object NoteDeleted : Effect()
 
-        object NoteDeleteError : Effect()
     }
 
 

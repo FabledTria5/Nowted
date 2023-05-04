@@ -21,6 +21,9 @@ import cafe.adriel.voyager.core.screen.Screen
 import dev.fabled.nowted.R
 import dev.fabled.nowted.presentation.ui.theme.SourceSans
 
+/**
+ * Voyager route for empty note screen
+ */
 class EmptyScreen : Screen {
 
     @Composable
@@ -31,20 +34,20 @@ class EmptyScreen : Screen {
             verticalArrangement = Arrangement.Center
         ) {
             Icon(
-                modifier = Modifier.size(80.dp),
                 painter = painterResource(id = R.drawable.ic_blank_note),
-                contentDescription = null
+                contentDescription = null,
+                modifier = Modifier.size(80.dp)
             )
             Text(
-                modifier = Modifier.padding(vertical = 10.dp),
                 text = stringResource(R.string.select_a_note_to_view),
+                modifier = Modifier.padding(vertical = 10.dp),
                 fontFamily = SourceSans,
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 28.sp
             )
             Text(
-                modifier = Modifier.padding(horizontal = 20.dp),
                 text = stringResource(R.string.choose_note_rationale),
+                modifier = Modifier.padding(horizontal = 20.dp),
                 color = Color.White.copy(alpha = .6f),
                 fontFamily = SourceSans,
                 fontSize = 16.sp,

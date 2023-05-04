@@ -2,6 +2,8 @@ package dev.fabled.nowted.di
 
 import androidx.room.Room
 import dev.fabled.nowted.data.db.NotesDatabase
+import dev.fabled.nowted.data.db.dao.FoldersDao
+import dev.fabled.nowted.data.db.dao.NotesDao
 import dev.fabled.nowted.data.dispatchers.AndroidDispatchers
 import dev.fabled.nowted.data.repository.FoldersRepositoryImpl
 import dev.fabled.nowted.data.repository.NotesRepositoryImpl
@@ -16,6 +18,7 @@ import dev.fabled.nowted.domain.use_cases.home.CollectFolders
 import dev.fabled.nowted.domain.use_cases.home.CollectRecents
 import dev.fabled.nowted.domain.use_cases.home.CreateFolder
 import dev.fabled.nowted.domain.use_cases.home.OpenFolder
+import dev.fabled.nowted.domain.use_cases.note.ArchiveNote
 import dev.fabled.nowted.domain.use_cases.note.ChangeNoteFavoriteState
 import dev.fabled.nowted.domain.use_cases.note.GetCurrentNote
 import dev.fabled.nowted.domain.use_cases.note.RemoveNote
@@ -32,6 +35,9 @@ import org.koin.core.module.dsl.bind
 import org.koin.core.module.dsl.singleOf
 import org.koin.dsl.module
 
+/**
+ * Module for database dependencies. Creates [NotesDatabase], provides [NotesDao] and [FoldersDao]
+ */
 val databaseModule = module {
     single {
         Room
@@ -45,16 +51,27 @@ val databaseModule = module {
     }
 
     single {
-        val database = get<NotesDatabase>()
+        val database: NotesDatabase = get()
         database.notesDao()
+    }
+
+    single {
+        val database: NotesDatabase = get()
+        database.foldersDao()
     }
 }
 
+/**
+ * Provides repositories
+ */
 val repositoryModule = module {
     singleOf(::NotesRepositoryImpl) { bind<NotesRepository>() }
     singleOf(::FoldersRepositoryImpl) { bind<FoldersRepository>() }
 }
 
+/**
+ * Provides use cases
+ */
 val useCasesModule = module {
     single { GetCurrentFolder(foldersRepository = get()) }
     single { GetCurrentNoteName(notesRepository = get()) }
@@ -72,15 +89,22 @@ val useCasesModule = module {
     single { RemoveNote(notesRepository = get(), foldersRepository = get()) }
     single { RestoreNote(foldersRepository = get()) }
     single { UpdateOrCreateNote(notesRepository = get()) }
+    single { ArchiveNote(foldersRepository = get()) }
 
     single { GetNotesFromCurrentFolder(notesRepository = get()) }
     single { GetFavoriteNotes(notesRepository = get()) }
 }
 
+/**
+ * Provides utilities, as [AppDispatchers]
+ */
 val utilsModule = module {
     singleOf(::AndroidDispatchers) { bind<AppDispatchers>() }
 }
 
+/**
+ * Provides ViewModels
+ */
 val viewModelModule = module {
     viewModelOf(::HomeViewModel)
     viewModelOf(::NotesListViewModel)
@@ -88,6 +112,9 @@ val viewModelModule = module {
     viewModelOf(::RestoreViewModel)
 }
 
+/**
+ * Provides all other modules
+ */
 val productionModules = module {
     includes(databaseModule, repositoryModule, useCasesModule, viewModelModule, utilsModule)
 }

@@ -43,11 +43,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.PathEffect
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -57,12 +53,16 @@ import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import dev.fabled.nowted.R
-import dev.fabled.nowted.presentation.core.use
+import dev.fabled.nowted.presentation.core.strokeBorder
+import dev.fabled.nowted.presentation.core.viewmodel.use
 import dev.fabled.nowted.presentation.model.UiNote
 import dev.fabled.nowted.presentation.ui.screens.note.NoteScreen
 import dev.fabled.nowted.presentation.ui.theme.SourceSans
 import org.koin.androidx.compose.koinViewModel
 
+/**
+ * Voyager route for notes list screen
+ */
 class NotesListScreen : Screen {
 
     @Composable
@@ -77,10 +77,7 @@ class NotesListScreen : Screen {
         }
 
         NotesListScreenContent(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(top = 20.dp),
-            screenState = state,
+            state = state,
             onNewItemClick = {
                 event.invoke(NotesListScreenContract.Event.OnCreateNote)
                 navigator.push(NoteScreen())
@@ -88,26 +85,37 @@ class NotesListScreen : Screen {
             onNoteClick = { noteTitle ->
                 event.invoke(NotesListScreenContract.Event.OnNoteClick(noteTitle))
                 navigator.push(NoteScreen())
-            }
+            },
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(top = 20.dp)
         )
     }
 }
 
+/**
+ * Represents content of [NoteScreen]
+ *
+ * @param state [NotesListScreenContract.State] state of screen
+ * @param onNewItemClick callback for event, when used intends to create first note in folder
+ * @param onNoteClick callback for event, when user selects note from folder
+ * @param modifier [Modifier] that applies to content
+ */
 @OptIn(ExperimentalFoundationApi::class, ExperimentalAnimationApi::class)
 @Composable
 fun NotesListScreenContent(
-    modifier: Modifier = Modifier,
-    screenState: NotesListScreenContract.State,
+    state: NotesListScreenContract.State,
     onNewItemClick: () -> Unit,
-    onNoteClick: (String) -> Unit
+    onNoteClick: (String) -> Unit,
+    modifier: Modifier = Modifier
 ) {
     Column(
         modifier = modifier.imePadding(),
         verticalArrangement = Arrangement.spacedBy(15.dp)
     ) {
         AnimatedContent(
+            targetState = state.folderName,
             modifier = Modifier.padding(start = 20.dp),
-            targetState = screenState.folderName,
             transitionSpec = {
                 slideInVertically() + fadeIn() with
                         slideOutVertically(targetOffsetY = { it * 2 }) + fadeOut()
@@ -126,54 +134,50 @@ fun NotesListScreenContent(
             verticalArrangement = Arrangement.spacedBy(20.dp),
             contentPadding = PaddingValues(start = 20.dp, top = 15.dp, end = 20.dp, bottom = 30.dp)
         ) {
-            if (screenState.notesList.isEmpty()
-                && !screenState.isSystemFolder
-                && !screenState.isLoading
+            if (state.notesList.isEmpty()
+                && !state.isSystemFolder
+                && !state.isLoading
             ) {
                 item {
                     EmptyItem(
+                        onItemClick = onNewItemClick,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(150.dp),
-                        onItemClick = onNewItemClick
+                            .height(150.dp)
                     )
                 }
             }
-            items(items = screenState.notesList) { note ->
+            items(items = state.notesList) { note ->
                 NoteListItem(
+                    noteItem = note,
+                    isSelected = note.noteTitle == state.selectedNoteName,
+                    onNoteClick = onNoteClick,
                     modifier = Modifier
                         .fillMaxWidth()
                         .defaultMinSize(minHeight = 100.dp)
-                        .animateItemPlacement(),
-                    noteItem = note,
-                    selectedNoteName = screenState.selectedNoteName,
-                    onNoteClick = onNoteClick
+                        .animateItemPlacement()
                 )
             }
         }
     }
 }
 
+/**
+ * Item, that is presented in notes list, if there is no notes in current folder
+ *
+ * @param onItemClick callback for event, when used intends to create first note in folder
+ * @param modifier [Modifier] that is applied to element
+ */
 @Composable
-fun EmptyItem(modifier: Modifier = Modifier, onItemClick: () -> Unit) {
+fun EmptyItem(
+    onItemClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     Column(
         modifier = modifier
             .clip(RoundedCornerShape(3.dp))
             .background(Color(color = 0xFF323232))
-            .drawBehind {
-                val stroke = Stroke(
-                    width = 2f,
-                    pathEffect = PathEffect.dashPathEffect(
-                        floatArrayOf(10f, 10f), 0f
-                    )
-                )
-
-                drawRoundRect(
-                    color = Color.White,
-                    style = stroke,
-                    cornerRadius = CornerRadius(3.dp.toPx())
-                )
-            }
+            .strokeBorder(color = Color.White, width = 2f, cornerRadius = 3.dp)
             .clickable { onItemClick() },
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
@@ -187,8 +191,8 @@ fun EmptyItem(modifier: Modifier = Modifier, onItemClick: () -> Unit) {
             Icon(imageVector = Icons.Default.Add, contentDescription = null)
         }
         Text(
-            modifier = Modifier.padding(top = 15.dp),
             text = stringResource(R.string.create_first_note),
+            modifier = Modifier.padding(top = 15.dp),
             fontFamily = SourceSans,
             fontWeight = FontWeight.SemiBold,
             fontSize = 16.sp
@@ -196,18 +200,25 @@ fun EmptyItem(modifier: Modifier = Modifier, onItemClick: () -> Unit) {
     }
 }
 
+/**
+ * Represents simple note in notes list
+ *
+ * @param noteItem [UiNote] that is representing in this item
+ * @param isSelected used to highlight selected item
+ * @param onNoteClick callback for event, when user selects note from folder
+ */
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
-private fun NoteListItem(
-    modifier: Modifier = Modifier,
+fun NoteListItem(
     noteItem: UiNote,
+    isSelected: Boolean,
     onNoteClick: (String) -> Unit,
-    selectedNoteName: String
+    modifier: Modifier = Modifier
 ) {
     // Using concrete colors instead of manipulate White color alpha, cause card doesn't show
     // correct colors when set them with alpha
     val backgroundColor by animateColorAsState(
-        targetValue = if (noteItem.noteTitle == selectedNoteName)
+        targetValue = if (isSelected)
             Color(color = 0xFF323232)
         else
             Color(color = 0xFF232323),
@@ -234,8 +245,8 @@ private fun NoteListItem(
                 verticalAlignment = Alignment.Top
             ) {
                 Text(
-                    modifier = Modifier.fillMaxWidth(fraction = .85f),
                     text = noteItem.noteTitle,
+                    modifier = Modifier.fillMaxWidth(fraction = .85f),
                     fontFamily = SourceSans,
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 18.sp,
@@ -243,12 +254,12 @@ private fun NoteListItem(
                     overflow = TextOverflow.Ellipsis
                 )
                 Icon(
-                    modifier = Modifier.size(20.dp),
                     imageVector = if (!noteItem.isFavorite)
                         Icons.Outlined.StarBorder
                     else
                         Icons.Default.Star,
                     contentDescription = null,
+                    modifier = Modifier.size(20.dp),
                     tint = Color.White
                 )
             }

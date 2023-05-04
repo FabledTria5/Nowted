@@ -11,9 +11,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
+import dev.fabled.nowted.presentation.core.LocalWindowSize
 import dev.fabled.nowted.presentation.core.WindowType
 import dev.fabled.nowted.presentation.core.rememberWindowSize
 
+/**
+ * Defines color scheme for app
+ */
 private val appColorScheme = darkColors(
     background = PrimaryBackground,
     primary = Primary,
@@ -21,6 +25,11 @@ private val appColorScheme = darkColors(
     surface = PrimaryBackground,
 )
 
+/**
+ * Defines material theme for app and provides composition locals
+ *
+ * @param content screen content
+ */
 @Composable
 fun NowtedTheme(
     content: @Composable () -> Unit

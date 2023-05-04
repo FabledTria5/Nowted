@@ -1,7 +1,7 @@
 package dev.fabled.nowted.presentation.ui.screens.notes_list
 
 import androidx.compose.runtime.Stable
-import dev.fabled.nowted.presentation.core.UnidirectionalViewModel
+import dev.fabled.nowted.presentation.core.viewmodel.UnidirectionalViewModel
 import dev.fabled.nowted.presentation.model.UiNote
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf

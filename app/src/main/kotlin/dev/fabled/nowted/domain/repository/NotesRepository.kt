@@ -6,7 +6,7 @@ import kotlinx.coroutines.flow.Flow
 interface NotesRepository {
 
     /**
-     * [Flow] that represents name of selected note
+     * [Flow] representing name of selected note
      */
     val currentNoteName: Flow<String>
 

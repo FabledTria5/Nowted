@@ -27,13 +27,16 @@ import cafe.adriel.voyager.core.screen.Screen
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
 import dev.fabled.nowted.R
-import dev.fabled.nowted.presentation.core.collectInLaunchedEffect
-import dev.fabled.nowted.presentation.core.use
+import dev.fabled.nowted.presentation.core.viewmodel.collectInLaunchedEffect
+import dev.fabled.nowted.presentation.core.viewmodel.use
 import dev.fabled.nowted.presentation.ui.screens.note.NoteScreen
 import dev.fabled.nowted.presentation.ui.theme.Active
 import dev.fabled.nowted.presentation.ui.theme.SourceSans
 import org.koin.androidx.compose.koinViewModel
 
+/**
+ * Voyager route for note restore screen
+ */
 class RestoreNoteScreen(
     private val deletedNoteName: String,
     private val noteFolder: String
@@ -56,55 +59,66 @@ class RestoreNoteScreen(
             }
         }
 
-        Column(
+        RestoreScreenContent(
+            state = state,
+            onRestoreNote = { event.invoke(RestoreScreenContract.Event.RestoreNote) },
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 20.dp)
-                .fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+                .padding(horizontal = 15.dp)
+        )
+    }
+}
+
+@Composable
+private fun RestoreScreenContent(
+    state: RestoreScreenContract.State,
+    onRestoreNote: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Icon(
+            painter = painterResource(id = R.drawable.ic_restore),
+            contentDescription = null,
+            modifier = Modifier.size(80.dp)
+        )
+        Text(
+            text = """Restore "${state.deletedNoteName}"""",
+            modifier = Modifier.padding(top = 10.dp),
+            fontFamily = SourceSans,
+            fontWeight = FontWeight.SemiBold,
+            fontSize = 28.sp,
+            textAlign = TextAlign.Center,
+            lineHeight = 32.sp
+        )
+        Text(
+            text = stringResource(R.string.note_restore_rationale),
+            modifier = Modifier
+                .padding(top = 10.dp)
+                .widthIn(min = 0.dp, max = 500.dp),
+            color = Color.White.copy(alpha = .6f),
+            fontFamily = SourceSans,
+            fontSize = 16.sp,
+            textAlign = TextAlign.Center
+        )
+        Button(
+            onClick = onRestoreNote,
+            modifier = Modifier.padding(top = 10.dp),
+            shape = RoundedCornerShape(6.dp),
+            colors = ButtonDefaults.buttonColors(
+                backgroundColor = Active,
+                contentColor = Color.White
+            ),
+            contentPadding = PaddingValues(horizontal = 30.dp)
         ) {
-            Icon(
-                modifier = Modifier.size(80.dp),
-                painter = painterResource(id = R.drawable.ic_restore),
-                contentDescription = null
-            )
             Text(
-                modifier = Modifier.padding(top = 10.dp),
-                text = """Restore "${state.deletedNoteName}"""",
+                text = stringResource(R.string.restore),
                 fontFamily = SourceSans,
-                fontWeight = FontWeight.SemiBold,
-                fontSize = 28.sp,
-                textAlign = TextAlign.Center,
-                lineHeight = 32.sp
+                fontSize = 16.sp
             )
-            Text(
-                modifier = Modifier
-                    .padding(top = 10.dp)
-                    .widthIn(min = 0.dp, max = 500.dp),
-                text = stringResource(R.string.note_restore_rationale),
-                color = Color.White.copy(alpha = .6f),
-                fontFamily = SourceSans,
-                fontSize = 16.sp,
-                textAlign = TextAlign.Center
-            )
-            Button(
-                modifier = Modifier.padding(top = 10.dp),
-                onClick = { event.invoke(RestoreScreenContract.Event.RestoreNote) },
-                shape = RoundedCornerShape(6.dp),
-                colors = ButtonDefaults.buttonColors(
-                    backgroundColor = Active,
-                    contentColor = Color.White
-                ),
-                contentPadding = PaddingValues(horizontal = 30.dp)
-            ) {
-                Text(
-                    text = stringResource(R.string.restore),
-                    fontFamily = SourceSans,
-                    fontSize = 16.sp
-                )
-            }
         }
     }
-
 }

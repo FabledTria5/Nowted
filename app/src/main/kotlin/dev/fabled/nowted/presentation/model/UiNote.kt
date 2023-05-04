@@ -9,6 +9,9 @@ import dev.fabled.nowted.presentation.core.NoteTextWeight
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
+/**
+ * Ui representation of note
+ */
 @Stable
 data class UiNote(
     val noteTitle: String = "",
@@ -20,5 +23,6 @@ data class UiNote(
     val fontWeight: NoteTextWeight = NoteTextWeight.Normal,
     val textStyle: NoteTextStyle = NoteTextStyle.Normal,
     val textDecoration: NoteTextDecoration = NoteTextDecoration.None,
-    val noteDate: String = LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+    val noteDate: String = LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")),
+    val isNoteExists: Boolean = false
 )

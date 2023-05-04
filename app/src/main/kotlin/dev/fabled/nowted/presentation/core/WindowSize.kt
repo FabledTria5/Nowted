@@ -1,11 +1,14 @@
 package dev.fabled.nowted.presentation.core
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCompositionContext
 import androidx.compose.ui.platform.LocalConfiguration
+
+val LocalWindowSize = compositionLocalOf { WindowSize() }
 
 /**
  * Class to define current window size. Provides [width] and [height] members to let user decide,

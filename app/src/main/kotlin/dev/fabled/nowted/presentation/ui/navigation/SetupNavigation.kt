@@ -16,17 +16,20 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import cafe.adriel.voyager.core.platform.multiplatformName
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
 import cafe.adriel.voyager.navigator.currentOrThrow
+import dev.fabled.nowted.R
+import dev.fabled.nowted.presentation.core.LocalWindowSize
 import dev.fabled.nowted.presentation.core.WindowType
-import dev.fabled.nowted.presentation.core.collectInLaunchedEffect
 import dev.fabled.nowted.presentation.core.distinctReplace
 import dev.fabled.nowted.presentation.core.rememberWindowSize
 import dev.fabled.nowted.presentation.core.snackBar
-import dev.fabled.nowted.presentation.core.use
+import dev.fabled.nowted.presentation.core.viewmodel.collectInLaunchedEffect
+import dev.fabled.nowted.presentation.core.viewmodel.use
 import dev.fabled.nowted.presentation.ui.navigation.transitions.FadeTransition
 import dev.fabled.nowted.presentation.ui.navigation.transitions.SlideTransition
 import dev.fabled.nowted.presentation.ui.screens.empty.EmptyScreen
@@ -40,7 +43,6 @@ import dev.fabled.nowted.presentation.ui.screens.notes_list.NotesListScreenContr
 import dev.fabled.nowted.presentation.ui.screens.notes_list.NotesListViewModel
 import dev.fabled.nowted.presentation.ui.screens.restore.RestoreNoteScreen
 import dev.fabled.nowted.presentation.ui.theme.LocalPaddings
-import dev.fabled.nowted.presentation.ui.theme.LocalWindowSize
 import dev.fabled.nowted.presentation.ui.theme.SecondaryBackground
 import org.koin.androidx.compose.koinViewModel
 
@@ -117,6 +119,7 @@ fun HomeScreenRoute(
     viewModel: HomeViewModel = koinViewModel()
 ) {
     val navigator = LocalNavigator.currentOrThrow
+    val context = LocalContext.current
 
     val snackbarHostState = remember { SnackbarHostState() }
     val keyboardController = LocalSoftwareKeyboardController.current
@@ -140,7 +143,7 @@ fun HomeScreenRoute(
 
             HomeScreenContract.Effect.FolderCreated -> snackBar(
                 snackbarHostState = snackbarHostState,
-                message = "Created new folder!",
+                message = context.getString(R.string.folder_created),
                 softwareKeyboardController = keyboardController
             )
 
@@ -153,9 +156,6 @@ fun HomeScreenRoute(
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { padding ->
         HomeScreenContent(
-            modifier = Modifier
-                .padding(padding)
-                .fillMaxSize(),
             state = state,
             onFolderClick = { folderName ->
                 event.invoke(HomeScreenContract.Event.OpenFolder(folderName))
@@ -163,18 +163,15 @@ fun HomeScreenRoute(
             onNoteClick = { noteName ->
                 event.invoke(HomeScreenContract.Event.OpenNote(noteName))
             },
-            onToggleSearch = {
-                event.invoke(HomeScreenContract.Event.ToggleSearch)
-            },
-            onSearchQueryChange = { query ->
-                event.invoke(HomeScreenContract.Event.UpdateSearchQuery(query))
-            },
             onStartCreateNewFolderClick = {
                 event.invoke(HomeScreenContract.Event.OnStartCreateNewFolder)
             },
             onCreateNewFolderClick = { folderName ->
                 event.invoke(HomeScreenContract.Event.CreateFolder(folderName))
-            }
+            },
+            modifier = Modifier
+                .padding(padding)
+                .fillMaxSize()
         )
     }
 }
@@ -198,7 +195,7 @@ private fun NotesListScreenRoute(
     }
 
     effect.collectInLaunchedEffect {
-        when(it) {
+        when (it) {
             is NotesListScreenContract.Effect.OpenNote -> {
                 navigator.distinctReplace(screen = NoteScreen()) {
                     lastItem.key == EmptyScreen::class.multiplatformName
@@ -209,11 +206,11 @@ private fun NotesListScreenRoute(
     }
 
     NotesListScreenContent(
-        modifier = modifier,
-        screenState = state,
+        state = state,
         onNewItemClick = { event.invoke(NotesListScreenContract.Event.OnCreateNote) },
         onNoteClick = { noteName ->
             event.invoke(NotesListScreenContract.Event.OnNoteClick(noteName))
-        }
+        },
+        modifier = modifier
     )
 }

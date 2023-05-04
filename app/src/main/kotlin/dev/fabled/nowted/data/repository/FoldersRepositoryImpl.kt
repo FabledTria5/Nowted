@@ -1,5 +1,6 @@
 package dev.fabled.nowted.data.repository
 
+import dev.fabled.nowted.data.db.dao.FoldersDao
 import dev.fabled.nowted.data.db.dao.NotesDao
 import dev.fabled.nowted.data.db.entities.FolderEntity
 import dev.fabled.nowted.data.mapper.toFolderModel
@@ -16,31 +17,30 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
 
 class FoldersRepositoryImpl(
-    private val notesDao: NotesDao,
+    private val foldersDao: FoldersDao,
     private val dispatchers: AppDispatchers
 ) : FoldersRepository {
 
     private val mutableFolder = MutableStateFlow(FolderModel())
     override val currentFolder: Flow<FolderModel> = mutableFolder.asStateFlow()
 
-    override fun getFolders(): Flow<List<FolderModel>> = notesDao
+    override fun getFolders(): Flow<List<FolderModel>> = foldersDao
         .getFolders()
         .map { list -> list.toFoldersModels() }
         .flowOn(dispatchers.ioDispatcher)
 
     override suspend fun createFolder(folderName: String) = withContext(dispatchers.ioDispatcher) {
-        notesDao.addFolder(FolderEntity(folderName = folderName))
+        foldersDao.addFolder(FolderEntity(folderName = folderName))
     }
 
     override suspend fun openFolder(folderName: String) {
-        val folderEntity = notesDao.getFolder(folderName)
+        val folderEntity = foldersDao.getFolder(folderName)
         mutableFolder.update { folderEntity.toFolderModel() }
     }
 
     override suspend fun changeNoteFolder(noteName: String, noteFolder: String) =
         withContext(dispatchers.ioDispatcher) {
-            notesDao.changeFolder(noteName = noteName, newFolder = noteFolder)
+            foldersDao.changeFolder(noteName = noteName, newFolder = noteFolder)
         }
-
 
 }
