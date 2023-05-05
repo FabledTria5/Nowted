@@ -73,6 +73,8 @@ import dev.fabled.nowted.presentation.core.viewmodel.use
 import dev.fabled.nowted.presentation.ui.components.MyTextField
 import dev.fabled.nowted.presentation.ui.components.OptionsButton
 import dev.fabled.nowted.presentation.ui.screens.empty.EmptyScreen
+import dev.fabled.nowted.presentation.ui.screens.home.HomeScreen
+import dev.fabled.nowted.presentation.ui.screens.home.HomeScreenContract
 import dev.fabled.nowted.presentation.ui.screens.restore.RestoreNoteScreen
 import dev.fabled.nowted.presentation.ui.theme.LocalPaddings
 import dev.fabled.nowted.presentation.ui.theme.SourceSans
@@ -80,6 +82,9 @@ import kotlinx.coroutines.delay
 import org.koin.androidx.compose.koinViewModel
 import kotlin.time.Duration.Companion.milliseconds
 
+/**
+ * Voyager route for note screen
+ */
 class NoteScreen(private val screenKey: String = "") : Screen {
 
     override val key: ScreenKey
@@ -152,6 +157,16 @@ class NoteScreen(private val screenKey: String = "") : Screen {
     }
 }
 
+/**
+ * Represents content of [NoteScreen]
+ *
+ * @param state current state of screen
+ * @param onEvent callback for all events from screen
+ * @param modifier [Modifier] applied for content
+ *
+ * @see [NoteScreenContract.State]
+ * @see [NoteScreenContract.Event]
+ */
 @Composable
 fun NoteScreenContent(
     state: NoteScreenContract.State,
@@ -218,6 +233,19 @@ fun NoteScreenContent(
     }
 }
 
+/**
+ * Represents content of top bar for [HomeScreen]. This content note name and options button
+ *
+ * @param noteTitle title of note
+ * @param isFavorite is this note in favorite
+ * @param isNoteExists indicates, if it is new note or existing one
+ * @param onEvent callback for events from top bar and options button
+ * @see modifier [Modifier] applied to content
+ * @param primaryTextFieldFocusRequester [FocusRequester] for primary text field to request
+ * focus after ime action
+ *
+ * @see [NoteScreenContract.Event]
+ */
 @Composable
 private fun NoteTopBar(
     noteTitle: String,
@@ -289,6 +317,17 @@ private fun NoteTopBar(
     }
 }
 
+/**
+ * [Popup] window with options for note
+ *
+ * @param onDismiss callback to dismiss popup
+ * @param isNoteExists indicates if this note exists and can be deleted, added to favorites and
+ * archived
+ * @param isFavorite indicates if note is favorite
+ * @param onEvent callback for events [HomeScreenContract.Event]
+ *
+ * @see [HomeScreenContract.Event]
+ */
 @Composable
 private fun NoteOptionsPopup(
     onDismiss: () -> Unit,
@@ -401,8 +440,19 @@ private fun NoteOptionsPopup(
     }
 }
 
+/**
+ * Section to show note folder and note creation date
+ *
+ * @param noteDate creation date of note
+ * @param noteFolder note folder name
+ * @param modifier [Modifier] applied to content
+ */
 @Composable
-private fun NoteDateFolder(modifier: Modifier = Modifier, noteDate: String, noteFolder: String) {
+private fun NoteDateFolder(
+    noteDate: String,
+    noteFolder: String,
+    modifier: Modifier = Modifier
+) {
     Column(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(15.dp)
@@ -474,6 +524,16 @@ private fun NoteDateFolder(modifier: Modifier = Modifier, noteDate: String, note
     }
 }
 
+/**
+ * Row with settings, that can be applied to note
+ *
+ * @param contentPadding horizontal padding for scrollable row
+ * @param textSize current note text size
+ * @param onEvent [NoteScreenContract.Event] for component
+ * @param modifier [Modifier] applied for component
+ *
+ * @see [NoteScreenContract.Event]
+ */
 @Composable
 private fun NoteSettings(
     contentPadding: Dp,
@@ -590,13 +650,6 @@ private fun NoteSettings(
                         .clickable { onEvent(NoteScreenContract.Event.ToggleTextDecoration) }
                 )
             }
-            Icon(
-                painter = painterResource(id = R.drawable.ic_image),
-                contentDescription = null,
-                modifier = Modifier
-                    .size(20.dp)
-                    .clickable { }
-            )
         }
         Spacer(
             modifier = Modifier
@@ -608,6 +661,15 @@ private fun NoteSettings(
     }
 }
 
+/**
+ * [Popup] window to select paragraph size
+ *
+ * @param onDismiss dismiss callback
+ * @param textSize current text size. Used to calculate current paragraph
+ * @param onEvent [NoteScreenContract.Event] for component
+ *
+ * @see [NoteScreenContract.Event]
+ */
 @Composable
 private fun ParagraphPopUp(
     onDismiss: () -> Unit,
@@ -664,11 +726,20 @@ private fun ParagraphPopUp(
     }
 }
 
+/**
+ * [Popup] window to select text size
+ *
+ * @param onDismiss dismiss callback
+ * @param textSize current text size
+ * @param onEvent [NoteScreenContract.Event] for component
+ *
+ * @see [NoteScreenContract.Event]
+ */
 @Composable
 private fun TextSizePopup(
     onDismiss: () -> Unit,
-    onEvent: (NoteScreenContract.Event) -> Unit,
-    textSize: String
+    textSize: String,
+    onEvent: (NoteScreenContract.Event) -> Unit
 ) {
     Popup(
         onDismissRequest = onDismiss,

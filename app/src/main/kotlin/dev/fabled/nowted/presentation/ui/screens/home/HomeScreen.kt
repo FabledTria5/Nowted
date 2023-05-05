@@ -74,6 +74,9 @@ import dev.fabled.nowted.presentation.ui.theme.SourceSans
 import kotlinx.collections.immutable.ImmutableList
 import org.koin.androidx.compose.koinViewModel
 
+/**
+ * Voyager route for home screen
+ */
 class HomeScreen : Screen {
 
     @OptIn(ExperimentalComposeUiApi::class)
@@ -136,6 +139,18 @@ class HomeScreen : Screen {
     }
 }
 
+/**
+ * Represents content of [HomeScreen]
+ *
+ * @param state current state of screen
+ * @param onFolderClick callback for event, when user intends to open folder
+ * @param onNoteClick callback for event, when user intends to create new note or open existing
+ * @param onStartCreateNewFolderClick callback for event, when user starts creating new folder
+ * @param onCreateNewFolderClick callback for event, when user finished creating new folder
+ * @param modifier [Modifier] applied to content
+ *
+ * @see [HomeScreenContract.State]
+ */
 @Composable
 fun HomeScreenContent(
     state: HomeScreenContract.State,
@@ -182,6 +197,13 @@ fun HomeScreenContent(
     }
 }
 
+/**
+ * Represents content of top bar for [HomeScreen]. This content includes app name and new note
+ * button
+ *
+ * @param onNewNoteClick callback for event, when user intends to create new note
+ * @param modifier [Modifier] applied to content
+ */
 @Composable
 private fun HomeScreenTopContent(
     onNewNoteClick: () -> Unit,
@@ -236,6 +258,14 @@ private fun HomeScreenTopContent(
     }
 }
 
+/**
+ * Extends [LazyListScope] to show recent notes. Shows "Recents" text and list. Not showing if
+ * there is no recent notes
+ *
+ * @param recents list of recent notes. Size of list never surpasses 3
+ * @param onRecentClick callback for event, when user intends to open recent note
+ * @param selectedNoteName name of current selected note to highlight it in the list
+ */
 @OptIn(ExperimentalFoundationApi::class)
 private fun LazyListScope.recents(
     recents: ImmutableList<String>,
@@ -298,9 +328,20 @@ private fun LazyListScope.recents(
     }
 }
 
+/**
+ * Extends [LazyListScope] to show folders. Shows "Folders" text, new folder form and folders
+ * list. Shows only user created folders and non-system default folders.
+ *
+ * @param folders list of folders
+ * @param selectedFolder name of selected folder to highlight it in the list
+ * @param onFolderClick callback for event, when user intends to open folder
+ * @param onCreateNewFolderClick callback for event, when user starts creating folder
+ * @param isCreatingNewFolder indicates, if user is creating new folder
+ * @param onNewFolderDoneClick callback for event, when user finishes creating folder
+ */
 @OptIn(ExperimentalFoundationApi::class)
 private fun LazyListScope.folders(
-    folders: List<String>,
+    folders: ImmutableList<String>,
     selectedFolder: String,
     onFolderClick: (String) -> Unit,
     onCreateNewFolderClick: () -> Unit,
@@ -391,7 +432,14 @@ private fun LazyListScope.folders(
 
 }
 
-private fun LazyListScope.createFolderItem(onCreateFolder: (String) -> Unit) = item {
+/**
+ * Extends [LazyListScope] and shows single text field, when user can type the name of new folder
+ *
+ * @param onCreateFolder callback for event, when user finishes creating new folder
+ */
+private fun LazyListScope.createFolderItem(
+    onCreateFolder: (String) -> Unit
+) = item {
     var newFolderName by remember { mutableStateOf(value = "") }
 
     val focusRequester = remember { FocusRequester() }
@@ -447,6 +495,13 @@ private fun LazyListScope.createFolderItem(onCreateFolder: (String) -> Unit) = i
     }
 }
 
+/**
+ * Extends [LazyListScope] to show more items. This items is system and user can not directly
+ * create note inside them.
+ *
+ * @param selectedFolder name of selected folder to be highlighted in list
+ * @param onFolderClick callback for event, when user intends to open folder
+ */
 private fun LazyListScope.more(
     selectedFolder: String,
     onFolderClick: (String) -> Unit

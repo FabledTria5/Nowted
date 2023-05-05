@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.collectLatest
 
 /**
- * Created [StateDispatchEffect] for given [UnidirectionalViewModel]
+ * Creates [StateDispatchEffect] for given [UnidirectionalViewModel]
  *
  * @param viewModel used to send [EVENT] and receive [EFFECT]
  */
@@ -37,6 +37,9 @@ data class StateDispatchEffect<STATE, EVENT, EFFECT>(
     val effectFlow: SharedFlow<EFFECT>
 )
 
+/**
+ * Utility function for [StateDispatchEffect.effectFlow]
+ */
 @SuppressLint("ComposableNaming")
 @Composable
 fun <T> SharedFlow<T>.collectInLaunchedEffect(block: suspend (value: T) -> Unit) {

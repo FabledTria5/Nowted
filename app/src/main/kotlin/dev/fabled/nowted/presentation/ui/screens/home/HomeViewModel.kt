@@ -112,6 +112,8 @@ class HomeViewModel(
     }
 
     private fun createFolder(folderName: String) {
+        if (folderName.isBlank()) return
+
         viewModelScope.launch {
             mutableState.update { state ->
                 state.copy(isCreatingFolder = false)

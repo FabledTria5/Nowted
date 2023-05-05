@@ -1,5 +1,6 @@
 package dev.fabled.nowted.presentation.ui.screens.home
 
+import androidx.compose.runtime.Stable
 import dev.fabled.nowted.presentation.core.viewmodel.UnidirectionalViewModel
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
@@ -29,6 +30,7 @@ interface HomeScreenContract :
      *
      * @property searchQuery used to store search query
      */
+    @Stable
     data class State(
         val recentNotes: ImmutableList<String> = persistentListOf(),
         val folders: ImmutableList<String> = persistentListOf(),

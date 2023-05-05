@@ -8,6 +8,9 @@ import androidx.core.view.WindowCompat
 import dev.fabled.nowted.presentation.ui.navigation.SetupNavigation
 import dev.fabled.nowted.presentation.ui.theme.NowtedTheme
 
+/**
+ * Single activity
+ */
 class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {

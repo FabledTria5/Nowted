@@ -69,6 +69,15 @@ class RestoreNoteScreen(
     }
 }
 
+/**
+ * Represents content of [RestoreNoteScreen]
+ *
+ * @param state current state of screen
+ * @param onRestoreNote callback for event, when user intends to restore note
+ * @param modifier [Modifier] applied to content
+ *
+ * @see [RestoreScreenContract.Event]
+ */
 @Composable
 private fun RestoreScreenContent(
     state: RestoreScreenContract.State,

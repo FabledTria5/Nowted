@@ -3,6 +3,9 @@ package dev.fabled.nowted.data.mapper
 import dev.fabled.nowted.data.db.entities.NoteEntity
 import dev.fabled.nowted.domain.model.NoteModel
 
+/**
+ * Mapping [NoteModel] to [NoteEntity]
+ */
 fun NoteModel.toEntity(): NoteEntity = NoteEntity(
     noteName = noteTitle,
     noteText = noteText,

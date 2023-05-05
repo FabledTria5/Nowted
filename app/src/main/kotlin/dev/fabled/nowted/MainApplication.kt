@@ -10,6 +10,9 @@ import timber.log.Timber
 
 class MainApplication : Application() {
 
+    /**
+     * Initializes [Timber] logger and loads starts koin
+     */
     override fun onCreate() {
         super.onCreate()
 

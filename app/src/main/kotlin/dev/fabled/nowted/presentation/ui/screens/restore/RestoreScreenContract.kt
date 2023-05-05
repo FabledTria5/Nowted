@@ -12,7 +12,6 @@ interface RestoreScreenContract :
         val noteFolderName: String = ""
     )
 
-    @Stable
     sealed class Event {
         data class SetData(
             val deletedNoteName: String = "",

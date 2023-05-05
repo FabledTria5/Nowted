@@ -4,6 +4,13 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
+/**
+ * Room entity for folder
+ *
+ * @property id primary key
+ * @property folderName name of folder
+ * @property isPrimary is this folder primary
+ */
 @Entity(tableName = "folders_table")
 data class FolderEntity(
     @PrimaryKey(autoGenerate = true)

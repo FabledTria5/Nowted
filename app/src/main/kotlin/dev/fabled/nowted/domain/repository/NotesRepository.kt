@@ -53,14 +53,6 @@ interface NotesRepository {
     fun getNoteByName(noteName: String): Flow<NoteModel?>
 
     /**
-     * Checks if note with given name exists
-     *
-     * @param name note name to check if note exists
-     * @return [Boolean] result of note existence
-     */
-    suspend fun isNoteExists(name: String): Boolean
-
-    /**
      * Creates note from given [NoteModel] object
      *
      * @param noteModel model of note to create

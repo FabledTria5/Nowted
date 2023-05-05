@@ -53,11 +53,6 @@ class NotesRepositoryImpl(
             .map { entities -> entities?.toNoteModel() }
             .flowOn(dispatchers.ioDispatcher)
 
-    override suspend fun isNoteExists(name: String): Boolean =
-        withContext(dispatchers.ioDispatcher) {
-            notesDao.isNoteExist(name)
-        }
-
     override suspend fun createNote(noteModel: NoteModel) = withContext(dispatchers.ioDispatcher) {
         notesDao.addNote(noteEntity = noteModel.toEntity())
     }

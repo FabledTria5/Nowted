@@ -28,8 +28,18 @@ class EmptyScreen : Screen {
 
     @Composable
     override fun Content() {
+        EmptyScreenContent(modifier = Modifier.fillMaxSize())
+    }
+
+    /**
+     * Content of [EmptyScreen]
+     *
+     * @param modifier [Modifier] applied to content
+     */
+    @Composable
+    private fun EmptyScreenContent(modifier: Modifier = Modifier) {
         Column(
-            modifier = Modifier.fillMaxSize(),
+            modifier = modifier,
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
