@@ -24,14 +24,24 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
+/**
+ * ViewModel for home screen
+ *
+ * @property collectRecents collects recent notes
+ * @property collectFolders collects folders
+ * @property createNewFolder creates new folder
+ * @property openNote sets new current note
+ * @property collectCurrentFolder collects current folder
+ * @property collectCurrentNoteName collects current note name
+ */
 class HomeViewModel(
     private val collectRecents: CollectRecents,
     private val collectFolders: CollectFolders,
     private val createNewFolder: CreateFolder,
     private val openFolder: OpenFolder,
     private val openNote: OpenNote,
-    private val getCurrentFolder: GetCurrentFolder,
-    private val getCurrentNoteName: GetCurrentNoteName,
+    private val collectCurrentFolder: GetCurrentFolder,
+    private val collectCurrentNoteName: GetCurrentNoteName,
 ) : ViewModel(), HomeScreenContract {
 
     private val mutableState = MutableStateFlow(HomeScreenContract.State())
@@ -50,8 +60,11 @@ class HomeViewModel(
         is HomeScreenContract.Event.OpenNote -> setNote(event.noteName)
     }
 
+    /**
+     * Collects current folder and current note name
+     */
     private fun getSelectedItems() {
-        getCurrentFolder()
+        collectCurrentFolder()
             .catch { exception ->
                 Timber.e(exception)
             }
@@ -62,7 +75,7 @@ class HomeViewModel(
             }
             .launchIn(viewModelScope)
 
-        getCurrentNoteName()
+        collectCurrentNoteName()
             .catch { exception ->
                 Timber.e(exception)
             }
@@ -74,6 +87,9 @@ class HomeViewModel(
             .launchIn(viewModelScope)
     }
 
+    /**
+     * Collects recent notes
+     */
     private fun getRecents() {
         collectRecents()
             .catch { exception ->
@@ -87,6 +103,9 @@ class HomeViewModel(
             .launchIn(viewModelScope)
     }
 
+    /**
+     * Collects folders
+     */
     private fun getFolders() {
         collectFolders()
             .catch { exception ->
@@ -107,10 +126,21 @@ class HomeViewModel(
             .launchIn(viewModelScope)
     }
 
+    /**
+     * Initialize folder creating process
+     */
     private fun startFolderCreation() = mutableState.update { state ->
         state.copy(isCreatingFolder = true)
     }
 
+    /**
+     * Creates new folder and finishes folder creating process. After process is finished, emits
+     * [HomeScreenContract.Effect.FolderCreated]
+     *
+     * @param folderName creates new folder with given name
+     *
+     * @see createNewFolder
+     */
     private fun createFolder(folderName: String) {
         if (folderName.isBlank()) return
 
@@ -124,6 +154,13 @@ class HomeViewModel(
         }
     }
 
+    /**
+     * Selects new folder and emits [HomeScreenContract.Effect.OpenFolder]
+     *
+     * @param folderName name of folder to be selected
+     *
+     * @see openFolder
+     */
     private fun selectFolder(folderName: String) {
         viewModelScope.launch {
             openFolder(folderName = folderName)
@@ -132,6 +169,14 @@ class HomeViewModel(
         }
     }
 
+    /**
+     * Updates current note and sends effect [HomeScreenContract.Effect.OpenNote] to perform
+     * navigation to note screen
+     *
+     * @param noteName next note name
+     *
+     * @see openNote
+     */
     private fun setNote(noteName: String = "") {
         viewModelScope.launch {
             openNote(noteName = noteName)

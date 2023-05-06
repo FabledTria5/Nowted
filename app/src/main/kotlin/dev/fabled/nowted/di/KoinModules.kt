@@ -28,7 +28,7 @@ import dev.fabled.nowted.domain.use_cases.notes_list.GetFavoriteNotes
 import dev.fabled.nowted.domain.use_cases.notes_list.GetNotesFromCurrentFolder
 import dev.fabled.nowted.presentation.ui.screens.home.HomeViewModel
 import dev.fabled.nowted.presentation.ui.screens.note.NoteViewModel
-import dev.fabled.nowted.presentation.ui.screens.notes_list.NotesListViewModel
+import dev.fabled.nowted.presentation.ui.screens.folder.FolderViewModel
 import dev.fabled.nowted.presentation.ui.screens.restore.RestoreViewModel
 import org.koin.androidx.viewmodel.dsl.viewModelOf
 import org.koin.core.module.dsl.bind
@@ -107,7 +107,7 @@ val utilsModule = module {
  */
 val viewModelModule = module {
     viewModelOf(::HomeViewModel)
-    viewModelOf(::NotesListViewModel)
+    viewModelOf(::FolderViewModel)
     viewModelOf(::NoteViewModel)
     viewModelOf(::RestoreViewModel)
 }

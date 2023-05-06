@@ -1,6 +1,5 @@
 package dev.fabled.nowted.presentation.ui.navigation
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -11,6 +10,7 @@ import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.material.Scaffold
 import androidx.compose.material.SnackbarHost
 import androidx.compose.material.SnackbarHostState
+import androidx.compose.material.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
@@ -38,9 +38,9 @@ import dev.fabled.nowted.presentation.ui.screens.home.HomeScreenContent
 import dev.fabled.nowted.presentation.ui.screens.home.HomeScreenContract
 import dev.fabled.nowted.presentation.ui.screens.home.HomeViewModel
 import dev.fabled.nowted.presentation.ui.screens.note.NoteScreen
-import dev.fabled.nowted.presentation.ui.screens.notes_list.NotesListScreenContent
-import dev.fabled.nowted.presentation.ui.screens.notes_list.NotesListScreenContract
-import dev.fabled.nowted.presentation.ui.screens.notes_list.NotesListViewModel
+import dev.fabled.nowted.presentation.ui.screens.folder.FolderScreenContent
+import dev.fabled.nowted.presentation.ui.screens.folder.FolderScreenContract
+import dev.fabled.nowted.presentation.ui.screens.folder.FolderViewModel
 import dev.fabled.nowted.presentation.ui.screens.restore.RestoreNoteScreen
 import dev.fabled.nowted.presentation.ui.theme.LocalPaddings
 import dev.fabled.nowted.presentation.ui.theme.SecondaryBackground
@@ -90,11 +90,10 @@ private fun ExpandedNavigation() {
                     .fillMaxWidth(fraction = .25f)
                     .padding(top = verticalPaddings.normalPadding),
             )
-            NotesListScreenRoute(
+            FolderScreenRoute(
                 modifier = Modifier
                     .fillMaxHeight()
                     .fillMaxWidth(fraction = .3f)
-                    .background(SecondaryBackground)
                     .padding(top = verticalPaddings.normalPadding),
             )
             FadeTransition(
@@ -177,26 +176,26 @@ fun HomeScreenRoute(
 }
 
 /**
- * Represents route for screen with list of notes in some folder.
+ * Represents route for folder screen.
  *
- * @param modifier a [Modifier] applied to [NotesListScreenContent]
- * @param viewModel [NotesListViewModel] injected with koin
+ * @param modifier a [Modifier] applied to [FolderScreenContent]
+ * @param viewModel [FolderViewModel] injected with koin
  */
 @Composable
-private fun NotesListScreenRoute(
+private fun FolderScreenRoute(
     modifier: Modifier = Modifier,
-    viewModel: NotesListViewModel = koinViewModel()
+    viewModel: FolderViewModel = koinViewModel()
 ) {
     val navigator = LocalNavigator.currentOrThrow
     val (state, event, effect) = use(viewModel = viewModel)
 
     LaunchedEffect(key1 = Unit) {
-        event.invoke(NotesListScreenContract.Event.ReadScreenData)
+        event.invoke(FolderScreenContract.Event.ReadScreenData)
     }
 
     effect.collectInLaunchedEffect {
         when (it) {
-            is NotesListScreenContract.Effect.OpenNote -> {
+            is FolderScreenContract.Effect.OpenNote -> {
                 navigator.distinctReplace(screen = NoteScreen()) {
                     lastItem.key == EmptyScreen::class.multiplatformName
                             || lastItem.key == RestoreNoteScreen::class.multiplatformName
@@ -205,12 +204,14 @@ private fun NotesListScreenRoute(
         }
     }
 
-    NotesListScreenContent(
-        state = state,
-        onNewItemClick = { event.invoke(NotesListScreenContract.Event.OnCreateNote) },
-        onNoteClick = { noteName ->
-            event.invoke(NotesListScreenContract.Event.OnNoteClick(noteName))
-        },
-        modifier = modifier
-    )
+    Surface(color = SecondaryBackground) {
+        FolderScreenContent(
+            state = state,
+            onNewItemClick = { event.invoke(FolderScreenContract.Event.OnCreateNote) },
+            onNoteClick = { noteName ->
+                event.invoke(FolderScreenContract.Event.OnNoteClick(noteName))
+            },
+            modifier = modifier
+        )
+    }
 }

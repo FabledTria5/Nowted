@@ -67,7 +67,7 @@ import dev.fabled.nowted.presentation.core.viewmodel.use
 import dev.fabled.nowted.presentation.model.MoreItem
 import dev.fabled.nowted.presentation.ui.components.MyOutlinedTextField
 import dev.fabled.nowted.presentation.ui.screens.note.NoteScreen
-import dev.fabled.nowted.presentation.ui.screens.notes_list.NotesListScreen
+import dev.fabled.nowted.presentation.ui.screens.folder.FolderScreen
 import dev.fabled.nowted.presentation.ui.theme.Active
 import dev.fabled.nowted.presentation.ui.theme.Kaushan
 import dev.fabled.nowted.presentation.ui.theme.SourceSans
@@ -107,7 +107,7 @@ class HomeScreen : Screen {
                     softwareKeyboardController = keyboardController
                 )
 
-                HomeScreenContract.Effect.OpenFolder -> navigator.push(NotesListScreen())
+                HomeScreenContract.Effect.OpenFolder -> navigator.push(FolderScreen())
             }
         }
 

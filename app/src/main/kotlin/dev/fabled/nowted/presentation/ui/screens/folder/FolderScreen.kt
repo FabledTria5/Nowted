@@ -1,4 +1,4 @@
-package dev.fabled.nowted.presentation.ui.screens.notes_list
+package dev.fabled.nowted.presentation.ui.screens.folder
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.ExperimentalAnimationApi
@@ -63,27 +63,27 @@ import org.koin.androidx.compose.koinViewModel
 /**
  * Voyager route for notes list screen
  */
-class NotesListScreen : Screen {
+class FolderScreen : Screen {
 
     @Composable
     override fun Content() {
         val navigator = LocalNavigator.currentOrThrow
-        val viewModel: NotesListViewModel = koinViewModel()
+        val viewModel: FolderViewModel = koinViewModel()
 
         val (state, event) = use(viewModel = viewModel)
 
         LaunchedEffect(key1 = Unit) {
-            event.invoke(NotesListScreenContract.Event.ReadScreenData)
+            event.invoke(FolderScreenContract.Event.ReadScreenData)
         }
 
-        NotesListScreenContent(
+        FolderScreenContent(
             state = state,
             onNewItemClick = {
-                event.invoke(NotesListScreenContract.Event.OnCreateNote)
+                event.invoke(FolderScreenContract.Event.OnNoteClick())
                 navigator.push(NoteScreen())
             },
             onNoteClick = { noteTitle ->
-                event.invoke(NotesListScreenContract.Event.OnNoteClick(noteTitle))
+                event.invoke(FolderScreenContract.Event.OnNoteClick(noteTitle))
                 navigator.push(NoteScreen())
             },
             modifier = Modifier
@@ -94,17 +94,17 @@ class NotesListScreen : Screen {
 }
 
 /**
- * Represents content of [NoteScreen]
+ * Represents content of [FolderScreen]
  *
- * @param state [NotesListScreenContract.State] state of screen
+ * @param state [FolderScreenContract.State] state of screen
  * @param onNewItemClick callback for event, when used intends to create first note in folder
  * @param onNoteClick callback for event, when user selects note from folder
  * @param modifier [Modifier] that applies to content
  */
 @OptIn(ExperimentalFoundationApi::class, ExperimentalAnimationApi::class)
 @Composable
-fun NotesListScreenContent(
-    state: NotesListScreenContract.State,
+fun FolderScreenContent(
+    state: FolderScreenContract.State,
     onNewItemClick: () -> Unit,
     onNoteClick: (String) -> Unit,
     modifier: Modifier = Modifier

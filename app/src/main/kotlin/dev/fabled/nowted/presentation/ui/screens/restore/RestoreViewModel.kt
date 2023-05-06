@@ -12,6 +12,13 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
+/**
+ * ViewModel for restore screen
+ *
+ * @property restoreNoteCase, use case that restores note
+ *
+ * @see [RestoreScreenContract]
+ */
 class RestoreViewModel(private val restoreNoteCase: RestoreNote) : ViewModel(),
     RestoreScreenContract {
 
@@ -31,6 +38,10 @@ class RestoreViewModel(private val restoreNoteCase: RestoreNote) : ViewModel(),
         }
     }
 
+    /**
+     * Performs [restoreNoteCase] and emits [RestoreScreenContract.Effect.NoteRestored] if it was
+     * restored successful
+     */
     private fun restoreNote() {
         viewModelScope.launch {
             restoreNoteCase(

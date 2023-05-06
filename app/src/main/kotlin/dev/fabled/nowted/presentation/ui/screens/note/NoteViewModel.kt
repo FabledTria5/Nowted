@@ -31,6 +31,17 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
+/**
+ * ViewModel for note screen
+ *
+ * @property getCurrentNoteName collects current note name
+ * @property getCurrentNote collects current note model based on note name
+ * @property getCurrentFolder collects current folder
+ * @property updateOrCreateNote creates new note or updates existing one
+ * @property removeNote deletes current note or moving it to trash
+ * @property changeNoteFavoriteState changes favorite state of current note
+ * @property archiveNote adding current note to archive
+ */
 class NoteViewModel(
     private val getCurrentNoteName: GetCurrentNoteName,
     private val getCurrentNote: GetCurrentNote,
@@ -62,6 +73,10 @@ class NoteViewModel(
         is NoteScreenContract.Event.NoteTextSizeChanged -> changeNoteTextSize(event.textSize)
     }
 
+    /**
+     * Collecting current note name and performing [flatMapLatest] operation to get current note
+     * model. Collecting note model is combined with collecting current folder name
+     */
     @OptIn(ExperimentalCoroutinesApi::class)
     private fun collectCurrentNote() {
         getCurrentNoteName()
@@ -89,34 +104,66 @@ class NoteViewModel(
             .launchIn(viewModelScope)
     }
 
+    /**
+     * Updates note title
+     *
+     * @param newTitle new note title
+     */
     private fun changeNoteTitle(newTitle: String) = mutableState.update { state ->
         state.copy(note = state.note.copy(noteTitle = newTitle))
     }
 
+    /**
+     * Updates note text
+     *
+     * @param newText new note text
+     */
     private fun changeNoteText(newText: String) = mutableState.update { state ->
         state.copy(note = state.note.copy(noteText = newText))
     }
 
+    /**
+     * Updates note paragraph
+     *
+     * @param paragraph new paragraph value
+     */
     private fun changeNoteParagraph(paragraph: TextUnit) = mutableState.update { state ->
         state.copy(note = state.note.copy(paragraph = paragraph))
     }
 
+    /**
+     * Updates note text size
+     *
+     * @param textSize new text size
+     */
     private fun changeNoteTextSize(textSize: TextUnit) = mutableState.update { state ->
         state.copy(note = state.note.copy(textSize = textSize))
     }
 
+    /**
+     * Toggles font weight
+     */
     private fun changeTextWeight() = mutableState.update { state ->
         state.copy(note = state.note.copy(fontWeight = state.note.fontWeight.next))
     }
 
+    /**
+     * Toggles text style
+     */
     private fun changeTextStyle() = mutableState.update { state ->
         state.copy(note = state.note.copy(textStyle = state.note.textStyle.next))
     }
 
+    /**
+     * Toggles text decoration
+     */
     private fun changeTextDecoration() = mutableState.update { state ->
         state.copy(note = state.note.copy(textDecoration = state.note.textDecoration.next))
     }
 
+    /**
+     * Saving note and emitting result of it as [NoteScreenContract.Effect]
+     */
     private fun saveNote() {
         viewModelScope.launch {
             val note = state.value.note
@@ -143,6 +190,9 @@ class NoteViewModel(
         }
     }
 
+    /**
+     * Changes note favorite state and emitting result of it as [NoteScreenContract.Effect]
+     */
     private fun changeFavoriteState() {
         viewModelScope.launch {
             val newState = changeNoteFavoriteState(
@@ -160,6 +210,9 @@ class NoteViewModel(
         }
     }
 
+    /**
+     * Adding note to archive and emitting result of it as [NoteScreenContract.Effect]
+     */
     private fun putToArchive() {
         viewModelScope.launch {
             val noteName = state.value.note.noteTitle
@@ -169,6 +222,11 @@ class NoteViewModel(
         }
     }
 
+    /**
+     * Perform delete operation, that can add note to trash or delete it. If note can be restored,
+     * emits [NoteScreenContract.Effect.AddedToTrash] to navigate to restore screen. If note can not
+     * be restored, emits [NoteScreenContract.Effect.NoteDeleted] to navigate to empty screen
+     */
     private fun deleteNote() {
         viewModelScope.launch {
             val note = state.value.note

@@ -6,13 +6,13 @@ import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 
 /**
- * Realization of [UnidirectionalViewModel], that creates contract for Home screen.
+ * Realization of [UnidirectionalViewModel], that creates contract for home screen.
  */
 interface HomeScreenContract :
     UnidirectionalViewModel<HomeScreenContract.State, HomeScreenContract.Event, HomeScreenContract.Effect> {
 
     /**
-     * State of home screen.
+     * Represents state of home screen.
      *
      * @property recentNotes list of recent notes. Never can contain more than 3 elements.
      * Represented by [ImmutableList] to guarantee compose, that list is stable

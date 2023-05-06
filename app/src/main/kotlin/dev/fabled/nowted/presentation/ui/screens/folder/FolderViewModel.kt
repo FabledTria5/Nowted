@@ -1,7 +1,8 @@
-package dev.fabled.nowted.presentation.ui.screens.notes_list
+package dev.fabled.nowted.presentation.ui.screens.folder
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dev.fabled.nowted.domain.model.SystemFolders
 import dev.fabled.nowted.domain.use_cases.common.GetCurrentFolder
 import dev.fabled.nowted.domain.use_cases.common.OpenNote
 import dev.fabled.nowted.domain.use_cases.notes_list.GetFavoriteNotes
@@ -25,25 +26,40 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
-class NotesListViewModel(
+/**
+ * ViewModel for folder screen
+ *
+ * @property getCurrentFolder use case, collects current folder
+ * @property getFavoriteNotes use case, collects favorite notes
+ * @property collectNotes use case, collects notes in folder
+ * @property openNote use case, sets new current note
+ */
+class FolderViewModel(
     private val getCurrentFolder: GetCurrentFolder,
     private val getFavoriteNotes: GetFavoriteNotes,
     private val collectNotes: GetNotesFromCurrentFolder,
     private val openNote: OpenNote
-) : ViewModel(), NotesListScreenContract {
+) : ViewModel(), FolderScreenContract {
 
-    private val mutableState = MutableStateFlow(NotesListScreenContract.State())
-    override val state: StateFlow<NotesListScreenContract.State> = mutableState.asStateFlow()
+    private val mutableState = MutableStateFlow(FolderScreenContract.State())
+    override val state: StateFlow<FolderScreenContract.State> = mutableState.asStateFlow()
 
-    private val effectFlow = MutableSharedFlow<NotesListScreenContract.Effect>()
-    override val effect: SharedFlow<NotesListScreenContract.Effect> = effectFlow.asSharedFlow()
+    private val effectFlow = MutableSharedFlow<FolderScreenContract.Effect>()
+    override val effect: SharedFlow<FolderScreenContract.Effect> = effectFlow.asSharedFlow()
 
-    override fun onEvent(event: NotesListScreenContract.Event) = when (event) {
-        NotesListScreenContract.Event.ReadScreenData -> readData()
-        NotesListScreenContract.Event.OnCreateNote -> setNote()
-        is NotesListScreenContract.Event.OnNoteClick -> setNote(noteName = event.noteName)
+    override fun onEvent(event: FolderScreenContract.Event) = when (event) {
+        FolderScreenContract.Event.ReadScreenData -> readData()
+        is FolderScreenContract.Event.OnNoteClick -> setNote(noteName = event.noteName)
     }
 
+    /**
+     * Collects current folder name and then performing [flatMapLatest] operation on it to collect
+     * all notes inside this folder. If folder is "Favorites", then collecting favorite notes
+     *
+     * @see getCurrentFolder
+     * @see getFavoriteNotes
+     * @see collectNotes
+     */
     @OptIn(ExperimentalCoroutinesApi::class)
     private fun readData() {
         getCurrentFolder()
@@ -58,7 +74,7 @@ class NotesListViewModel(
                 }
             }
             .flatMapLatest { folderModel ->
-                if (folderModel.folderName == "Favorites" && folderModel.isSystemFolder)
+                if (folderModel.folderName == SystemFolders.Favorites.folderName)
                     getFavoriteNotes()
                 else
                     collectNotes(folderName = folderModel.folderName)
@@ -79,11 +95,19 @@ class NotesListViewModel(
             .launchIn(viewModelScope)
     }
 
+    /**
+     * Updates current note and sends effect [FolderScreenContract.Effect.OpenNote] to perform
+     * navigation to note screen
+     *
+     * @param noteName next note name
+     *
+     * @see openNote
+     */
     private fun setNote(noteName: String = "") {
         viewModelScope.launch {
             openNote(noteName)
 
-            effectFlow.emit(NotesListScreenContract.Effect.OpenNote(noteName))
+            effectFlow.emit(FolderScreenContract.Effect.OpenNote(noteName))
         }
     }
 }
